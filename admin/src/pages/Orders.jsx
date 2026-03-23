@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { backendUrl, currency } from "../App";
+import { backendUrl, formatPrice } from "../App";
 import { toast } from "react-toastify";
 import { assets } from "../assets/assets";
 
@@ -49,7 +49,7 @@ const Orders = ({ token }) => {
 
   return (
     <div>
-      <h3>Order page</h3>
+      <h3>Trang đơn hàng</h3>
       <div>
         {orders.map((order, index) => (
           <div
@@ -96,25 +96,25 @@ const Orders = ({ token }) => {
             </div>
             <div>
               <p className="text-sm sm:text-[15px]">
-                Items : {order.items.length}
+                Sản phẩm: {order.items.length}
               </p>
-              <p className="mt-3">Method: {order.paymentMethod}</p>
-              <p>Payment: {order.payment ? "Done" : "Pending"}</p>
-              <p>Date: {new Date(order.date).toLocaleDateString()}</p>
+              <p className="mt-3">Phương thức: {order.paymentMethod}</p>
+              <p>Thanh toán: {order.payment ? "Đã thanh toán" : "Chưa thanh toán"}</p>
+              <p>Ngày: {new Date(order.date).toLocaleDateString()}</p>
             </div>
             <p className="text-sm sm:text-[15px]">
-              {currency} {order.amount}
+              {formatPrice(order.amount)}
             </p>
             <select
               onChange={(event) => statusHandler(event, order._id)}
               value={order.status}
               className="p-2 font-semibold"
             >
-              <option value="Order Placed">Order Placed</option>
-              <option value="Packing">Packing</option>
-              <option value="Shipped">Shipped</option>
-              <option value="Out for delivery">Out for delivery</option>
-              <option value="Delivered">Delivered</option>
+              <option value="Order Placed">Đã đặt hàng</option>
+              <option value="Packing">Đang đóng gói</option>
+              <option value="Shipped">Đã gửi hàng</option>
+              <option value="Out for delivery">Đang giao</option>
+              <option value="Delivered">Đã giao</option>
             </select>
           </div>
         ))}

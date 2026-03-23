@@ -5,7 +5,7 @@ import { assets } from "../assets/assets";
 import CartTotal from "../components/CartTotal";
 
 const Cart = () => {
-  const { products, currency, cartItems, updateQuantity, navigate } =
+  const { products, formatPrice, cartItems, updateQuantity, navigate } =
     useContext(ShopContext);
 
   const [cartData, setCartData] = useState([]);
@@ -31,7 +31,7 @@ const Cart = () => {
   return (
     <div className="border-t pt-14">
       <div className="text-2xl mb-3">
-        <Title text1={"YOUR"} text2={"CART"} />
+        <Title text1={"GIỎ"} text2={"HÀNG"} />
       </div>
 
       <div>
@@ -56,10 +56,7 @@ const Cart = () => {
                     {productData.name}
                   </p>
                   <div className="flex items-center gap-5 mt-2">
-                    <p>
-                      {currency}
-                      {productData.price}
-                    </p>
+                    <p>{formatPrice(productData.price)}</p>
                     <p className="px-2 sm:px-3 sm:py-1 border bg-slate-50">
                       {item.size}
                     </p>
@@ -100,7 +97,7 @@ const Cart = () => {
               onClick={() => navigate("/place-order")}
               className="bg-black text-white text-sm my-8 px-8 py-3"
             >
-              PROCEED TO CHECKOUT
+              TIẾN HÀNH THANH TOÁN
             </button>
           </div>
         </div>

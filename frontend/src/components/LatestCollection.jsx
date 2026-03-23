@@ -17,8 +17,8 @@ const LatestCollection = () => {
     return (
     <div className='my-10'>
       <div className='text-center py-8 text-3xl'>
-        <Title  text1={'LATEST'} text2={'COLLECTION'} />
-        <p className='w-3/4 m-auto text-xs sm:text-sm md:text-base  text-gray-600'>Ecommerce or "electronic commerce" is the trading of goods and services online. The internet allows individuals and businesses to buy and sell an increasing amount of physical goods, digital goods, and services electronically.</p>     
+        <Title  text1={'BỘ SƯU TẬP'} text2={'MỚI'} />
+        <p className='w-3/4 m-auto text-xs sm:text-sm md:text-base  text-gray-600'>Thương mại điện tử là hoạt động mua bán hàng hóa và dịch vụ trực tuyến. Internet giúp cá nhân và doanh nghiệp dễ dàng trao đổi nhiều loại sản phẩm và dịch vụ một cách nhanh chóng.</p>     
       </div>
       
       {/* Rendering products */}

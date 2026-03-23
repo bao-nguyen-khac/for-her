@@ -7,20 +7,20 @@ const OurPolicy = () => {
       
       <div>
         <img src={assets.exchange_icon} alt="" className='w-12 m-auto mb-5'/>
-        <p className='font-semibold'>Easy Exchange Policy</p>
-        <p className='text-gray-400'>We offer hasle free exchange Policy</p>
+        <p className='font-semibold'>Đổi hàng dễ dàng</p>
+        <p className='text-gray-400'>Hỗ trợ đổi hàng nhanh chóng, thuận tiện</p>
       </div>
 
       <div>
         <img src={assets.quality_icon} alt="" className='w-12 m-auto mb-5'/>
-        <p className='font-semibold'>7 Days Return Policy</p>
-        <p className='text-gray-400'>We provide 7 days free return policy</p>
+        <p className='font-semibold'>Hoàn trả trong 7 ngày</p>
+        <p className='text-gray-400'>Chính sách hoàn trả miễn phí trong 7 ngày</p>
       </div>
       
       <div>
         <img src={assets.support_img} alt="" className='w-12 m-auto mb-5'/>
-        <p className='font-semibold'>Best customer support</p>
-        <p className='text-gray-400'>we provide 24/7 customer support</p>
+        <p className='font-semibold'>Hỗ trợ khách hàng tận tâm</p>
+        <p className='text-gray-400'>Hỗ trợ 24/7 khi bạn cần</p>
       </div>
     
     </div>

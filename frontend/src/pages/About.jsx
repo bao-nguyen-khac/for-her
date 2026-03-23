@@ -7,71 +7,62 @@ const About = () => {
   return (
     <div>
       <div className="text-center text-2xl pt-10 border-t">
-        <Title text1={"ABOUT"} text2={"US"} />
+        <Title text1={"GIỚI THIỆU"} text2={""} />
       </div>
 
       <div className="my-10 flex flex-col md:flex-row gap-16">
         <img
           className="w-full md:max-w-[450px]"
-          src={assets.about_img}
+          src={assets.about}
           alt=""
         />
         <div className="flex flex-col justify-center gap-6 md:w-2/4 text-gray-600">
           <p>
-            Forever was born out of a passion for innovation and a desire to
-            revolutionize the way people shop online. Our journey began with a
-            simple idea: to provide a platform where customers can easily
-            discover, explore, and purchase a wide range of products from the
-            comfort of their homes.
+            Forever ra đời từ niềm đam mê đổi mới và mong muốn mang đến trải nghiệm
+            mua sắm trực tuyến tiện lợi hơn. Chúng tôi bắt đầu với một ý tưởng đơn giản:
+            tạo ra một nền tảng để khách hàng dễ dàng khám phá và mua sắm đa dạng sản phẩm
+            ngay tại nhà.
           </p>
           <p>
-            Since our inception, we've worked tirelessly to curate a diverse
-            selection of high-quality products that cater to every taste and
-            preference. From fashion and beauty to electronics and home
-            essentials, we offer an extensive collection sourced from trusted
-            brands and suppliers.
+            Từ những ngày đầu, chúng tôi luôn nỗ lực chọn lọc sản phẩm chất lượng,
+            phù hợp nhiều nhu cầu và sở thích. Từ thời trang đến các sản phẩm thiết yếu,
+            Forever hướng đến việc cung cấp danh mục phong phú từ các nguồn uy tín.
           </p>
-          <b className="text-gray-800">Our Mission</b>
+          <b className="text-gray-800">Sứ mệnh</b>
           <p>
-            Our mission at Forever is to empower customers with choice,
-            convenience, and confidence. We're dedicated to providing a seamless
-            shopping experience that exceeds expectations, from browsing and
-            ordering to delivery and beyond. We believe that shopping should be
-            enjoyable, affordable, and accessible to everyone.
+            Sứ mệnh của Forever là giúp khách hàng mua sắm với nhiều lựa chọn,
+            thuận tiện và an tâm. Chúng tôi cam kết mang đến trải nghiệm trọn vẹn
+            từ tìm kiếm, đặt hàng đến giao nhận. Mua sắm nên là điều dễ dàng, vui vẻ
+            và phù hợp với mọi người.
           </p>
         </div>
       </div>
 
       <div className="text-xl py-4">
-        <Title text1={"WHY"} text2={"CHOOSE US"} />
+        <Title text1={"VÌ SAO"} text2={"CHỌN CHÚNG TÔI"} />
       </div>
 
       <div className="flex flex-col md:flex-row text-sm mb-20">
         <div className="border px-10 md:px-16 py-8 sm:py-20 flex flex-col gap-5">
-          <b>Quality Assurance:</b>
+          <b>Đảm bảo chất lượng:</b>
           <p className="text-gray-600">
-            We meticulously select and vet each product to ensure it meets our
-            stringent quality standards. From materials to craftsmanship, every
-            item in our collection undergoes rigorous inspection so you receive
-            only the best. Your satisfaction and trust are our top priorities.
+            Chúng tôi lựa chọn và kiểm tra sản phẩm kỹ lưỡng để đáp ứng tiêu chuẩn
+            chất lượng. Từ chất liệu đến hoàn thiện, mỗi sản phẩm đều được xem xét
+            cẩn thận để bạn nhận được lựa chọn tốt nhất.
           </p>
         </div>
         <div className="border px-10 md:px-16 py-8 sm:py-20 flex flex-col gap-5">
-          <b>Convenience:</b>
+          <b>Tiện lợi:</b>
           <p className="text-gray-600">
-            With our user-friendly interface and hassle-free ordering process,
-            shopping has never been easier. Browse thousands of products,
-            compare prices, and place orders with just a few clicks – anytime,
-            anywhere. We bring the store to your fingertips.
+            Giao diện thân thiện và quy trình đặt hàng đơn giản giúp bạn mua sắm dễ dàng.
+            Xem sản phẩm, so sánh giá và đặt hàng chỉ trong vài thao tác – mọi lúc, mọi nơi.
           </p>
         </div>
         <div className="border px-10 md:px-16 py-8 sm:py-20 flex flex-col gap-5">
-          <b>Exceptional Customer Service:</b>
+          <b>Dịch vụ khách hàng:</b>
           <p className="text-gray-600">
-            Our dedicated team of professionals is here to assist you every step
-            of the way. From pre-purchase inquiries to post-purchase support, we
-            strive to provide timely and helpful assistance. Your satisfaction
-            is our mission, and we go above and beyond to ensure it.
+            Đội ngũ hỗ trợ luôn sẵn sàng đồng hành cùng bạn. Từ tư vấn trước khi mua
+            đến hỗ trợ sau mua, chúng tôi cố gắng phản hồi nhanh và hữu ích để bạn yên tâm.
           </p>
         </div>
       </div>

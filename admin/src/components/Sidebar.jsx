@@ -10,7 +10,7 @@ const Sidebar = () => {
           to="/add"
         >
           <img className="w-5 h-5 " src={assets.add_icon} alt="" />
-          <p className="hidden md:block">Add Items</p>
+          <p className="hidden md:block">Thêm sản phẩm</p>
         </NavLink>
 
         <NavLink
@@ -18,7 +18,7 @@ const Sidebar = () => {
           to="/list"
         >
           <img className="w-5 h-5 " src={assets.order_icon} alt="" />
-          <p className="hidden md:block">List Items</p>
+          <p className="hidden md:block">Danh sách sản phẩm</p>
         </NavLink>
         
         <NavLink
@@ -26,7 +26,7 @@ const Sidebar = () => {
           to="/orders"
         >
           <img className="w-5 h-5 " src={assets.order_icon} alt="" />
-          <p className="hidden md:block">Orders</p>
+          <p className="hidden md:block">Đơn hàng</p>
         </NavLink>
       </div>
     </div>

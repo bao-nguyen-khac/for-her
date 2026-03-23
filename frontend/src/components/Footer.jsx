@@ -17,43 +17,43 @@ const Footer = () => {
         <div>
           <img src={assets.logo} alt="" className='mb-5 w-32'/>
             <p className='w-full md:w-2/3 text-gray-600'>
-              Forever – Your ultimate destination for trendy and affordable shopping. 
-              We bring you the best quality products with a seamless online experience, 
-              because great style should last forever.
+              Forever – Điểm đến mua sắm tiện lợi với sản phẩm chất lượng và giá hợp lý.
+              Chúng tôi mang đến trải nghiệm mua sắm online mượt mà,
+              để phong cách của bạn luôn bền lâu theo thời gian.
             </p>
         </div>
 
         <div>
-            <p className='text-xl font-medium mb-5'>COMPANY</p>
+            <p className='text-xl font-medium mb-5'>CÔNG TY</p>
             <ul className='flex flex-col gap-1 text-gray-600'>
                 <li 
                   onClick={() => handleNavigation('/')} 
                   className='cursor-pointer hover:text-black transition-colors'
                 >
-                  Home
+                  Trang chủ
                 </li>
                 <li 
                   onClick={() => handleNavigation('/about')} 
                   className='cursor-pointer hover:text-black transition-colors'
                 >
-                  About Us
+                  Giới thiệu
                 </li>
                 <li 
                   onClick={() => handleNavigation('/contact')} 
                   className='cursor-pointer hover:text-black transition-colors'
                 >
-                  Contact US
+                  Liên hệ
                 </li>
                 <li className='cursor-pointer hover:text-black transition-colors'>
-                  Privacy Policy
+                  Chính sách bảo mật
                 </li>
             </ul>
         </div>
 
         <div>
-            <p className='text-xl font-medium mb-5'>GET IN TOUCH</p>
+            <p className='text-xl font-medium mb-5'>LIÊN HỆ</p>
             <ul className='flex flex-col gap-1 text-gray-600'>
-                <li>Phone: +92 3432705821</li>
+                <li>Điện thoại: +92 3432705821</li>
                 <li>Email: marqum029@gmail.com</li>
             </ul>
         </div>
@@ -63,7 +63,7 @@ const Footer = () => {
       <div>
         <hr />
         <p className='py-5 text-sm text-center'>
-          Copyright 2026@ forever.com - All Rights Reserved
+          Bản quyền © 2026 forever.com - Đã đăng ký bản quyền
         </p>    
       </div> 
 

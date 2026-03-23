@@ -23,22 +23,22 @@ const Navbar = () => {
         <ul className='hidden sm:flex gap-5 text-sm text-gray-700'>
           
         <NavLink to='/' className='flex flex-col items-center gap-1'>
-          <p>HOME</p>
+          <p>TRANG CHỦ</p>
           <hr className='w-2/4 border-none h-[1.5px] bg-gray-700 hidden' />
         </NavLink>
           
         <NavLink to='/collection' className='flex flex-col items-center gap-1'>
-          <p>COLLECTION</p>
+          <p>BỘ SƯU TẬP</p>
           <hr className='w-2/4 border-none h-[1.5px] bg-gray-700 hidden ' />
         </NavLink>
           
         <NavLink to='/about' className='flex flex-col items-center gap-1'>
-          <p>ABOUT</p>
+          <p>GIỚI THIỆU</p>
           <hr className='w-2/4 border-none h-[1.5px] bg-gray-700 hidden ' />
         </NavLink>
           
         <NavLink to='/contact' className='flex flex-col items-center gap-1'>
-          <p>CONTACT</p>
+          <p>LIÊN HỆ</p>
           <hr className='w-2/4 border-none h-[1.5px] bg-gray-700 hidden' />
         </NavLink>
         
@@ -54,9 +54,9 @@ const Navbar = () => {
                 {token && 
                 <div className='group-hover:block hidden absolute dropdown-menu right-0 pt-4' >
                   <div className='flex flex-col gap-2 w-36 py-3 px-5 bg-slate-100 text-gray-500 rounded'>
-                    <p className='cursor-pointer hover:text-black'>My Profile</p>
-                    <p onClick={() => navigate('/orders')}  className='cursor-pointer hover:text-black' >Orders </p>
-                    <p onClick={logout} className='cursor-pointer hover:text-black' >Logout</p>
+                    <p className='cursor-pointer hover:text-black'>Tài khoản</p>
+                    <p onClick={() => navigate('/orders')}  className='cursor-pointer hover:text-black' >Đơn hàng</p>
+                    <p onClick={logout} className='cursor-pointer hover:text-black' >Đăng xuất</p>
                   </div>
                 </div>}
             </div>
@@ -75,13 +75,13 @@ const Navbar = () => {
             <div className='flex flex-col text-gray-600'>
               <div onClick={() => setvisible(false)}  className='flex items-center gap-4 p-3 cursor-pointer'>
                 <img src={assets.dropdown_icon} alt="" className='h-4 rotate-180'/>
-                <p>Back</p>
+                <p>Quay lại</p>
               </div>
               
-              <NavLink  onClick={() => setvisible(false)}  className='py-2 pl-6 border' to='/'>HOME</NavLink>
-              <NavLink  onClick={() => setvisible(false)}  className='py-2 pl-6 border' to='/collection'>COLLECTION</NavLink>
-              <NavLink  onClick={() => setvisible(false)}  className='py-2 pl-6 border' to='/about'>ABOUT</NavLink>
-              <NavLink  onClick={() => setvisible(false)}  className='py-2 pl-6 border' to='/contact'>CONTACT</NavLink>
+              <NavLink  onClick={() => setvisible(false)}  className='py-2 pl-6 border' to='/'>TRANG CHỦ</NavLink>
+              <NavLink  onClick={() => setvisible(false)}  className='py-2 pl-6 border' to='/collection'>BỘ SƯU TẬP</NavLink>
+              <NavLink  onClick={() => setvisible(false)}  className='py-2 pl-6 border' to='/about'>GIỚI THIỆU</NavLink>
+              <NavLink  onClick={() => setvisible(false)}  className='py-2 pl-6 border' to='/contact'>LIÊN HỆ</NavLink>
             </div>
           </div>
         </div>

@@ -8,11 +8,11 @@ const NewsLetterBox = () => {
 
   return (
     <div className='text-center'>
-      <p className='text-2xl font-medium text-gray-800'>Subscribe now & get 20% off</p>
-      <p className='text-gray-400 mt-3'>Stay ahead of fashion trends! Get exclusive access to new collections, seasonal styles, and member-only discounts. Be the first to shop our latest arrivals before they sell out.</p>   
+      <p className='text-2xl font-medium text-gray-800'>Đăng ký ngay và nhận giảm 20%</p>
+      <p className='text-gray-400 mt-3'>Đừng bỏ lỡ xu hướng mới! Nhận thông tin bộ sưu tập mới, sản phẩm theo mùa và ưu đãi dành riêng cho thành viên.</p>   
       <form onSubmit={onSubmitHandler} className='w-full sm:w-1/2 flex items-center gap-3 mx-auto my-6 border pl-3'>
-        <input className='w-full sm:flex-1 outline-none'  type='email' placeholder='Enter your email' required/>
-        <button type='submit' className='bg-black text-white text-xs px-10 py-4'>SUBSCRIBE</button>
+        <input className='w-full sm:flex-1 outline-none'  type='email' placeholder='Nhập email của bạn' required/>
+        <button type='submit' className='bg-black text-white text-xs px-10 py-4'>ĐĂNG KÝ</button>
       </form>
     </div>
   )

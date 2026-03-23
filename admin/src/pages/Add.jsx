@@ -1,8 +1,9 @@
-import React, { use, useState } from 'react'
+import React, { useState } from 'react'
 import { assets } from '../assets/assets'
 import axios from 'axios'
 import { backendUrl } from '../App'
 import { toast } from 'react-toastify'
+import { CATEGORIES } from '../constants/categories'
 
 
 
@@ -16,7 +17,7 @@ const Add = ({token}) => {
  const [name, setName] = useState('');
  const [description, setDescription] = useState('');
  const [price, setPrice] = useState('');
- const [category, setCategory] = useState('Men');
+ const [category, setCategory] = useState(CATEGORIES[0]?.slug || 'ao-dai-truyen-thong');
  const [subCategory, setSubCategory] = useState('Topwear');
  const [bestseller, setBestseller] = useState(false);
  const [sizes, setSizes] = useState([]);
@@ -44,7 +45,7 @@ const Add = ({token}) => {
   const response = await axios.post(backendUrl + '/api/product/add', formData, {headers:{token}})
 
   if(response.data.success) {
-    toast.success(response.data.message)
+    toast.success('Đã thêm sản phẩm')
     setName('')
     setDescription('')
     setImage1(false)
@@ -53,7 +54,7 @@ const Add = ({token}) => {
     setImage4(false)
     setPrice('')
   } else {
-    toast.error(response.data.message)
+    toast.error('Không thể thêm sản phẩm')
   }
   
 
@@ -69,7 +70,7 @@ const Add = ({token}) => {
     <form onSubmit={onsubmitHandler}  className='flex flex-col w-full items-start gap-3' >
       
     <div>
-      <p className='mb-2'>Upload Image</p>
+      <p className='mb-2'>Tải ảnh lên</p>
 
 
       <div className='flex gap-2' >
@@ -94,37 +95,37 @@ const Add = ({token}) => {
 
 
     <div className='w-full' >
-      <p className='mb-2' >Product name</p>
-      <input onChange={(e) => setName(e.target.value)} value={name} className='w-full max-w-[500px] px-3 py-2' type="text" placeholder='Type here' required />
+      <p className='mb-2' >Tên sản phẩm</p>
+      <input onChange={(e) => setName(e.target.value)} value={name} className='w-full max-w-[500px] px-3 py-2' type="text" placeholder='Nhập tại đây' required />
     </div>
 
     <div className='w-full' >
-      <p className='mb-2' >Product description</p>
-      <textarea onChange={(e) => setDescription(e.target.value)} value={description} className='w-full max-w-[500px] px-3 py-2' type="text" placeholder='Write content here' required />
+      <p className='mb-2' >Mô tả sản phẩm</p>
+      <textarea onChange={(e) => setDescription(e.target.value)} value={description} className='w-full max-w-[500px] px-3 py-2' type="text" placeholder='Nhập mô tả tại đây' required />
     </div>
 
     <div className='flex flex-col sm:flex-row gap-2 w-full sm:gap-8 '>
 
       <div>
-        <p className='mb-2' >Product category</p>
+        <p className='mb-2' >Danh mục</p>
         <select onChange={(e) => setCategory(e.target.value)} className='w-full px-3 py-2'>
-          <option value="Men">Men</option>
-          <option value="Women">Women</option>
-          <option value="Kids">Kids</option>
+          {CATEGORIES.map((c) => (
+            <option key={c.slug} value={c.slug}>{c.label}</option>
+          ))}
         </select>
       </div>
 
       <div>
-        <p className='mb-2' >Sub category</p>
+        <p className='mb-2' >Loại</p>
         <select onChange={(e) => setSubCategory(e.target.value)}  className='w-full px-3 py-2' >
-          <option value="Topwear">Topwear</option>
-          <option value="Bottomwear">Bottomwear</option>
-          <option value="Winterwear">Winterwear</option>
+          <option value="Topwear">Áo</option>
+          <option value="Bottomwear">Quần</option>
+          <option value="Winterwear">Đồ mùa đông</option>
         </select>
       </div>
 
       <div>
-        <p className='mb-2' >Product Price</p>
+        <p className='mb-2' >Giá</p>
         <input onChange={(e) => setPrice(e.target.value)} value={price} className='w-full px-3 py-2 sm:w-[120px]'  type='Number' placeholder='25' />
       </div>
 
@@ -132,7 +133,7 @@ const Add = ({token}) => {
 
 
     <div>
-      <p className='mb-2' >Product Sizes</p>
+      <p className='mb-2' >Kích cỡ</p>
 
       <div className='flex gap-3' >
         <div onClick={() => setSizes(prev => prev.includes('S') ? prev.filter(item => item !== 'S') : [...prev, 'S'] )}>
@@ -161,11 +162,11 @@ const Add = ({token}) => {
 
     <div className='flex gap-2'>
       <input onChange={() => setBestseller(prev => !prev  )} checked={bestseller} type="checkbox" name="" id="bestseller" />
-      <label className='cursor-pointer' htmlFor="bestseller">Add to Bestseller</label>
+      <label className='cursor-pointer' htmlFor="bestseller">Đánh dấu bán chạy</label>
     </div>
 
 
-    <button type='submit' className='w-28 py-3 mt-4 bg-black text-white cursor-pointer'>ADD</button>
+    <button type='submit' className='w-28 py-3 mt-4 bg-black text-white cursor-pointer'>THÊM</button>
     </form>
   )
 }

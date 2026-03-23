@@ -9,7 +9,7 @@ export const ShopContext = createContext();
 
 const ShopContextProvider = (props) => {
 
-    const currency = 'Rs ';
+    const currency = '₫';
     const delivery_fee = 10;
     const backendUrl = import.meta.env.VITE_BACKEND_URL
     const [search, setSearch] = useState('');
@@ -18,10 +18,16 @@ const ShopContextProvider = (props) => {
     const [products, setProducts] = useState([]);
     const [token, setToken] = useState('')
     const navigate = useNavigate();
+    const formatPrice = (value) =>
+      new Intl.NumberFormat('vi-VN', {
+        style: 'currency',
+        currency: 'VND',
+        maximumFractionDigits: 0,
+      }).format(Number(value ?? 0));
 
     const addToCart = async (itemId,size) => {
         if(!size) {
-            toast.error('Select Product Size');
+            toast.error('Vui lòng chọn kích cỡ');
             return;
         }
         let cartData = structuredClone(cartItems);
@@ -42,7 +48,7 @@ const ShopContextProvider = (props) => {
     if(token) {
         try {    
         await axios.post(backendUrl + '/api/cart/add', {itemId,size}, {headers:{token}})
-        toast.success('Item added to cart')
+        toast.success('Đã thêm vào giỏ hàng')
         } catch (error) {
             console.log(error)
             toast.error(error.message)
@@ -139,7 +145,7 @@ const ShopContextProvider = (props) => {
    },[])
 
     const value ={
-        products , currency , delivery_fee, search, setSearch, showSearch, setShowSearch,
+        products , currency , formatPrice, delivery_fee, search, setSearch, showSearch, setShowSearch,
         cartItems, addToCart, setCartItems, getCartCount,updateQuantity, getCartAmount, navigate, backendUrl, 
         setToken,token
     }

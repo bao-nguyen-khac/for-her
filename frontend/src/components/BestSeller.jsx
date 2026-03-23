@@ -17,9 +17,9 @@ const BestSeller = () => {
     return (
     <div className='my-10' >
       <div className='text-center text-3xl py-8'>
-         <Title text1={'BEST'} text2={'SELLERS'}/>
+         <Title text1={'SẢN PHẨM'} text2={'BÁN CHẠY'}/>
          <p className='w-3/4 m-auto text-xs sm:text-sm md:text-base text-gray-600'>
-         Ecommerce or "electronic commerce" is the trading of goods and services online. The internet allows individuals and businesses to buy and sell an increasing amount of physical goods, digital goods, and services electronically.
+         Thương mại điện tử là hoạt động mua bán hàng hóa và dịch vụ trực tuyến. Bạn có thể mua sắm nhanh chóng, tiện lợi và theo dõi đơn hàng dễ dàng.
          </p>
       </div> 
 

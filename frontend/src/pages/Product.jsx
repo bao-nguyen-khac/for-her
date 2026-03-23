@@ -8,7 +8,7 @@ import { toast } from 'react-toastify';
 const Product = () => {
 
   const { productId } = useParams();
-  const { products, currency, addToCart } = useContext(ShopContext);
+  const { products, formatPrice, addToCart } = useContext(ShopContext);
   const [productData, setProductData] = useState(false);
   const [image, setImage] = useState('');
   const [size, setSize] = useState('');
@@ -58,10 +58,10 @@ const Product = () => {
           <img src={assets.star_dull_icon} alt="" className="w-3 5" />
           <p className='pl-2' >(122)</p>
         </div>
-        <p className='mt-5 text-3xl font-medium ' >{currency}{productData.price}</p>
+        <p className='mt-5 text-3xl font-medium ' >{formatPrice(productData.price)}</p>
         <p  className='mt-5 text-gray-500 md:w-4/5'>{productData.description}</p>
         <div className='flex flex-col gap-4 my-8'>
-            <p>Select Size</p>
+            <p>Chọn kích cỡ</p>
             <div className='flex gap-2'>
               {
                 productData.sizes.map((item,index) => (
@@ -69,12 +69,12 @@ const Product = () => {
                 ))}
             </div>
         </div>
-        <button onClick={() => addToCart(productData._id,size)} className='bg-black text-white px-8 py-3 text-sm active:bg-gray-700'>ADD TO CART</button>
+        <button onClick={() => addToCart(productData._id,size)} className='bg-black text-white px-8 py-3 text-sm active:bg-gray-700'>THÊM VÀO GIỎ</button>
         <hr className='mt-8 sm:w-4/5'/>
         <div className='text-sm text-gray-500 mt-5 flex flex-col gap-1'>
-           <p>100% Original product.</p>
-           <p>Cash on delivery is available on this product.</p>
-           <p>Easy return and exchange policy within 7 days.</p>
+           <p>Cam kết sản phẩm chính hãng.</p>
+           <p>Hỗ trợ thanh toán khi nhận hàng.</p>
+           <p>Đổi trả dễ dàng trong 7 ngày.</p>
         </div>
       </div>
     </div>
@@ -83,12 +83,12 @@ const Product = () => {
       
       <div className='mt-20' >
         <div className='flex'>
-            <b className='border px-5 py-3  text-sm'>Description</b>
-            <p className='border px-5 py-3 text-sm'>Reviews (122)</p>
+            <b className='border px-5 py-3  text-sm'>Mô tả</b>
+            <p className='border px-5 py-3 text-sm'>Đánh giá (122)</p>
         </div>
         <div className='flex flex-col gap-4 border px-6 py-6 text-sm text-gray-500'>
-           <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Nam asperiores, itaque sit facilis eveniet, delectus optio qui corrupti eius praesentium dicta maiores culpa autem odit reprehenderit labore similique quaerat saepe.</p>
-           <p>Lorem ipsum dolor, sit amet consectetur adipisicing elit. Nemo enim tenetur deserunt provident sit molestiae repellendus! Magni, quae. Architecto culpa deserunt totam eos quidem eveniet ea officia, aspernatur fugiat. Facere.</p>
+           <p>Sản phẩm được lựa chọn kỹ lưỡng, mang lại trải nghiệm thoải mái khi sử dụng và phù hợp nhiều dịp.</p>
+           <p>Chúng tôi luôn cập nhật mẫu mã mới và đảm bảo chất lượng để bạn yên tâm mua sắm.</p>
         </div>
       </div>
 
