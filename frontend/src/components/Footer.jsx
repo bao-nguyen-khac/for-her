@@ -17,7 +17,7 @@ const Footer = () => {
         <div>
           <img src={assets.logo} alt="" className='mb-5 w-32'/>
             <p className='w-full md:w-2/3 text-gray-600'>
-              Forever – Điểm đến mua sắm tiện lợi với sản phẩm chất lượng và giá hợp lý.
+              ForHer – Điểm đến mua sắm tiện lợi với sản phẩm chất lượng và giá hợp lý.
               Chúng tôi mang đến trải nghiệm mua sắm online mượt mà,
               để phong cách của bạn luôn bền lâu theo thời gian.
             </p>
@@ -63,7 +63,7 @@ const Footer = () => {
       <div>
         <hr />
         <p className='py-5 text-sm text-center'>
-          Bản quyền © 2026 forever.com - Đã đăng ký bản quyền
+          Bản quyền © 2026 forher.com - Đã đăng ký bản quyền
         </p>    
       </div> 
 

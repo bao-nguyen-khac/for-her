@@ -3,10 +3,12 @@ import React, { useEffect, useState } from 'react'
 import { backendUrl, formatPrice } from '../App'
 import { toast } from 'react-toastify'
 import { getCategoryLabel } from '../constants/categories'
+import { useNavigate } from 'react-router-dom'
 
 const List = ({token}) => {
   
   const [list,setList] = useState([])
+  const navigate = useNavigate()
   
   const fetchList = async () => {
     try {
@@ -70,7 +72,22 @@ const List = ({token}) => {
               <p>{item.name}</p>
               <p>{getCategoryLabel(item.category)}</p>
               <p>{formatPrice(item.price)}</p>
-              <p onClick={() => removeproduct(item._id)} className='text-right md:text-center cursor-pointer text-lg ' >X</p>
+              <div className='flex justify-end md:justify-center gap-2'>
+                <button
+                  type='button'
+                  onClick={() => navigate(`/products/${item._id}/edit`)}
+                  className='px-3 py-1 border rounded text-sm hover:bg-gray-50'
+                >
+                  Chỉnh sửa
+                </button>
+                <button
+                  type='button'
+                  onClick={() => removeproduct(item._id)}
+                  className='px-3 py-1 border rounded text-sm hover:bg-gray-50'
+                >
+                  Xoá
+                </button>
+              </div>
           </div>
         ))
       }

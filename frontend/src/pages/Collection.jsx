@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useContext, useEffect, useMemo, useState } from 'react'
 import { ShopContext } from '../context/ShopContext';
 import { assets } from '../assets/assets';
 import Title from '../components/Title';
@@ -15,6 +15,11 @@ const Collection = () => {
   const [category, setCategory] = useState([]);
   const [SubCategory, setSubCategory] = useState([]);
   const [sortType, setSortType] = useState('relavent');
+
+  const subCategoryOptions = useMemo(() => {
+    const values = products.map((p) => p?.subcategory).filter(Boolean)
+    return Array.from(new Set(values))
+  }, [products])
 
   const toggleCategory = (e) => {
 
@@ -125,15 +130,26 @@ const Collection = () => {
         <div className={`border border-gray-300  pl-5 py-3 my-5 ${showFilter ? '' : 'hidden'} sm:block`}>
            <p className='mb-3 text-sm font-medium'>LOẠI</p>
            <div className='flex flex-col gap-2 text-sm font-light text-gray-700'>
-            <p className='flex gap-2'>
-              <input className='w-3'  type='checkbox'  value={"Topwear"} onChange={toggleSubCategory} />Áo
-            </p>
-            <p className='flex gap-2'>
-              <input className='w-3'  type='checkbox'  value={"Bottomwear"} onChange={toggleSubCategory} />Quần
-            </p>
-            <p className='flex gap-2'>
-              <input className='w-3'  type='checkbox'  value={"Winterwear"} onChange={toggleSubCategory} />Đồ mùa đông
-            </p>
+            {subCategoryOptions.length > 0 ? (
+              subCategoryOptions.map((v) => (
+                <p className='flex gap-2' key={v}>
+                  <input className='w-3' type='checkbox' value={v} onChange={toggleSubCategory} />
+                  {v}
+                </p>
+              ))
+            ) : (
+              <>
+                <p className='flex gap-2'>
+                  <input className='w-3' type='checkbox' value={"Topwear"} onChange={toggleSubCategory} />Topwear
+                </p>
+                <p className='flex gap-2'>
+                  <input className='w-3' type='checkbox' value={"Bottomwear"} onChange={toggleSubCategory} />Bottomwear
+                </p>
+                <p className='flex gap-2'>
+                  <input className='w-3' type='checkbox' value={"Winterwear"} onChange={toggleSubCategory} />Winterwear
+                </p>
+              </>
+            )}
            </div>
          </div>
 

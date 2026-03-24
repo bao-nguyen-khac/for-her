@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { assets } from '../assets/assets'
 import axios from 'axios'
 import { backendUrl } from '../App'
@@ -18,9 +18,31 @@ const Add = ({token}) => {
  const [description, setDescription] = useState('');
  const [price, setPrice] = useState('');
  const [category, setCategory] = useState(CATEGORIES[0]?.slug || 'ao-dai-truyen-thong');
- const [subCategory, setSubCategory] = useState('Topwear');
+ const [subCategory, setSubCategory] = useState('');
  const [bestseller, setBestseller] = useState(false);
  const [sizes, setSizes] = useState([]);
+ const [subCategoryOptions, setSubCategoryOptions] = useState([]);
+
+ useEffect(() => {
+  const loadSubCategories = async () => {
+    try {
+      const response = await axios.get(backendUrl + '/api/product/list')
+      if (response.data.success) {
+        const values = (response.data.products || [])
+          .map((p) => p?.subcategory)
+          .filter(Boolean)
+        const unique = Array.from(new Set(values))
+        setSubCategoryOptions(unique)
+        if (!subCategory && unique.length) {
+          setSubCategory(unique[0])
+        }
+      }
+    } catch (error) {
+      // silent fallback
+    }
+  }
+  loadSubCategories()
+ },[])
 
  const onsubmitHandler = async (e) => {
    e.preventDefault();
@@ -117,10 +139,18 @@ const Add = ({token}) => {
 
       <div>
         <p className='mb-2' >Loại</p>
-        <select onChange={(e) => setSubCategory(e.target.value)}  className='w-full px-3 py-2' >
-          <option value="Topwear">Áo</option>
-          <option value="Bottomwear">Quần</option>
-          <option value="Winterwear">Đồ mùa đông</option>
+        <select value={subCategory} onChange={(e) => setSubCategory(e.target.value)}  className='w-full px-3 py-2' >
+          {subCategoryOptions.length > 0 ? (
+            subCategoryOptions.map((v) => (
+              <option key={v} value={v}>{v}</option>
+            ))
+          ) : (
+            <>
+              <option value="Topwear">Topwear</option>
+              <option value="Bottomwear">Bottomwear</option>
+              <option value="Winterwear">Winterwear</option>
+            </>
+          )}
         </select>
       </div>
 

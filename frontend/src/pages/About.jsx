@@ -18,7 +18,7 @@ const About = () => {
         />
         <div className="flex flex-col justify-center gap-6 md:w-2/4 text-gray-600">
           <p>
-            Forever ra đời từ niềm đam mê đổi mới và mong muốn mang đến trải nghiệm
+            ForHer ra đời từ niềm đam mê đổi mới và mong muốn mang đến trải nghiệm
             mua sắm trực tuyến tiện lợi hơn. Chúng tôi bắt đầu với một ý tưởng đơn giản:
             tạo ra một nền tảng để khách hàng dễ dàng khám phá và mua sắm đa dạng sản phẩm
             ngay tại nhà.
@@ -26,11 +26,11 @@ const About = () => {
           <p>
             Từ những ngày đầu, chúng tôi luôn nỗ lực chọn lọc sản phẩm chất lượng,
             phù hợp nhiều nhu cầu và sở thích. Từ thời trang đến các sản phẩm thiết yếu,
-            Forever hướng đến việc cung cấp danh mục phong phú từ các nguồn uy tín.
+            ForHer hướng đến việc cung cấp danh mục phong phú từ các nguồn uy tín.
           </p>
           <b className="text-gray-800">Sứ mệnh</b>
           <p>
-            Sứ mệnh của Forever là giúp khách hàng mua sắm với nhiều lựa chọn,
+            Sứ mệnh của ForHer là giúp khách hàng mua sắm với nhiều lựa chọn,
             thuận tiện và an tâm. Chúng tôi cam kết mang đến trải nghiệm trọn vẹn
             từ tìm kiếm, đặt hàng đến giao nhận. Mua sắm nên là điều dễ dàng, vui vẻ
             và phù hợp với mọi người.
