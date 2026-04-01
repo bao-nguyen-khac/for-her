@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { assets } from '../assets/assets'
 import axios from 'axios'
-import { backendUrl } from '../App'
+import { backendUrl, formatPrice } from '../App'
 import { toast } from 'react-toastify'
 import { CATEGORIES, getCategoryLabel } from '../constants/categories'
 
@@ -22,6 +22,8 @@ const Edit = ({ token }) => {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [price, setPrice] = useState('')
+  const [discountType, setDiscountType] = useState('none')
+  const [discountValue, setDiscountValue] = useState('')
   const [category, setCategory] = useState(CATEGORIES[0]?.slug || 'ao-dai-truyen-thong')
   const [subCategory, setSubCategory] = useState('')
   const [subCategoryOptions, setSubCategoryOptions] = useState([])
@@ -57,6 +59,8 @@ const Edit = ({ token }) => {
       setName(p?.name || '')
       setDescription(p?.description || '')
       setPrice(String(p?.price ?? ''))
+      setDiscountType(p?.discountType || 'none')
+      setDiscountValue(p?.discountValue !== undefined && p?.discountValue !== null ? String(p.discountValue) : '')
       setCategory(p?.category || (CATEGORIES[0]?.slug || 'ao-dai-truyen-thong'))
       setSubCategory(p?.subcategory || '')
       setBestseller(Boolean(p?.bestseller))
@@ -128,6 +132,8 @@ const Edit = ({ token }) => {
       formData.append('name', name)
       formData.append('description', description)
       formData.append('price', price)
+      formData.append('discountType', discountType)
+      formData.append('discountValue', discountValue === '' ? 0 : discountValue)
       formData.append('category', category)
       formData.append('subcategory', subCategory)
       formData.append('bestseller', bestseller)
@@ -291,6 +297,42 @@ const Edit = ({ token }) => {
         <div>
           <p className='mb-2'>Giá</p>
           <input onChange={(e) => setPrice(e.target.value)} value={price} className='w-full px-3 py-2 sm:w-[160px]' type='Number' placeholder='300000' />
+        </div>
+      </div>
+
+      <div className='flex flex-col sm:flex-row gap-2 w-full sm:gap-8'>
+        <div>
+          <p className='mb-2'>Giảm giá</p>
+          <select value={discountType} onChange={(e) => setDiscountType(e.target.value)} className='w-full px-3 py-2'>
+            <option value='none'>Không</option>
+            <option value='percentage'>Theo %</option>
+            <option value='fixed'>Giảm số tiền</option>
+          </select>
+        </div>
+
+        <div>
+          <p className='mb-2'>Giá trị giảm</p>
+          <input
+            onChange={(e) => setDiscountValue(e.target.value)}
+            value={discountValue}
+            className='w-full px-3 py-2 sm:w-[160px]'
+            type='Number'
+            placeholder={discountType === 'percentage' ? '10' : '50000'}
+            disabled={discountType === 'none'}
+          />
+          {price && discountType !== 'none' ? (
+            <p className='text-xs text-gray-500 mt-1'>
+              Giá sau giảm:{' '}
+              {formatPrice(
+                Math.max(
+                  0,
+                  discountType === 'percentage'
+                    ? Math.round(Number(price) * (1 - Number(discountValue || 0) / 100))
+                    : Number(price) - Number(discountValue || 0),
+                ),
+              )}
+            </p>
+          ) : null}
         </div>
       </div>
 

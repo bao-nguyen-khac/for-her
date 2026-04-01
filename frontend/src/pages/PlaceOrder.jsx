@@ -8,7 +8,7 @@ import { toast } from 'react-toastify'
 const PlaceOrder = () => {
 
   const [method,setMothod] = useState('Cash On Delivery');
-  const {navigate, backendUrl, token, cartItems, setCartItems, getCartAmount, delivery_fee, products } = useContext(ShopContext);
+  const {navigate, backendUrl, token, cartItems, setCartItems, getCartAmount, delivery_fee, products, getFinalPrice } = useContext(ShopContext);
 
   const [formData, setFormData] = useState({
     firstName:'',
@@ -40,6 +40,8 @@ const PlaceOrder = () => {
              if(itemInfo){
                 itemInfo.size = item
                 itemInfo.quantity = cartItems[items][item]
+                // Ensure order snapshot uses final price after discount
+                itemInfo.price = getFinalPrice(itemInfo)
                 orderItems.push(itemInfo)
              }
           }
@@ -54,15 +56,16 @@ const PlaceOrder = () => {
 
       switch(method) {
         // Api calls for COD
-       case 'Cash On Delivery':
-       const response = await axios.post(backendUrl + '/api/order/place', orderData, {headers: {token}}) 
-       if(response.data.success){
-        setCartItems({})
-        navigate('/orders')
-       } else {
-        toast.error(response.data.message)
+       case 'Cash On Delivery': {
+        const response = await axios.post(backendUrl + '/api/order/place', orderData, {headers: {token}}) 
+        if(response.data.success){
+         setCartItems({})
+         navigate('/orders')
+        } else {
+         toast.error(response.data.message)
+        }
+        break;
        }
-       break;
 
         default:
         break;

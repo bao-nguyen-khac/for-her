@@ -30,8 +30,8 @@ const Orders = () => {
         
       }
 
-    } catch (error) {
-      
+    } catch {
+      // noop
     }
   }
 

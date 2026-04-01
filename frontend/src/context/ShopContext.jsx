@@ -25,6 +25,31 @@ const ShopContextProvider = (props) => {
         maximumFractionDigits: 0,
       }).format(Number(value ?? 0));
 
+    const getFinalPrice = (product) => {
+      const base = Number(product?.price ?? 0)
+      const type = product?.discountType || 'none'
+      const value = Number(product?.discountValue ?? 0)
+
+      if (!value || type === 'none') return Math.max(0, base)
+
+      if (type === 'percentage') {
+        return Math.max(0, Math.round(base * (1 - value / 100)))
+      }
+      if (type === 'fixed') {
+        return Math.max(0, base - value)
+      }
+      return Math.max(0, base)
+    }
+
+    const getDiscountLabel = (product) => {
+      const type = product?.discountType || 'none'
+      const value = Number(product?.discountValue ?? 0)
+      if (!value || type === 'none') return ''
+      if (type === 'percentage') return `-${value}%`
+      if (type === 'fixed') return `Giảm ${formatPrice(value)}`
+      return ''
+    }
+
     const addToCart = async (itemId,size) => {
         if(!size) {
             toast.error('Vui lòng chọn kích cỡ');
@@ -66,8 +91,7 @@ const ShopContextProvider = (props) => {
                 if(cartItems[items][item] > 0) {
                 totalCount += cartItems[items][item];
                 }
-            }catch(error){          
-            }
+            }catch{ /* noop */ }
         }
     }
     return totalCount;
@@ -97,10 +121,9 @@ const ShopContextProvider = (props) => {
     for(const item in cartItems[items]){
         try{
             if(cartItems[items][item] > 0){
-                totalAmount += itemInfo.price * cartItems[items][item]
+                totalAmount += getFinalPrice(itemInfo) * cartItems[items][item]
             }
-        }catch(error){
-        }
+        }catch{ /* noop */ }
     }
    }   
    return totalAmount;
@@ -145,7 +168,7 @@ const ShopContextProvider = (props) => {
    },[])
 
     const value ={
-        products , currency , formatPrice, delivery_fee, search, setSearch, showSearch, setShowSearch,
+        products , currency , formatPrice, getFinalPrice, getDiscountLabel, delivery_fee, search, setSearch, showSearch, setShowSearch,
         cartItems, addToCart, setCartItems, getCartCount,updateQuantity, getCartAmount, navigate, backendUrl, 
         setToken,token
     }

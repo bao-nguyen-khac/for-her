@@ -1,11 +1,12 @@
 import { v2 as cloudinary } from 'cloudinary';
 import productModel from '../models/productModel.js'
+import mongoose from 'mongoose'
 
 
 // function for add product
 const addProduct = async (req, res) => {
     try {        
-      const { name, description, category, price, subcategory, bestseller, sizes } = req.body
+      const { name, description, category, price, subcategory, bestseller, sizes, discountType, discountValue } = req.body
 
       const image1 = req.files.image1 &&  req.files.image1[0]
       const image2 = req.files.image2 &&  req.files.image2[0]
@@ -27,6 +28,8 @@ const addProduct = async (req, res) => {
         description,
         category,
         price: Number(price),
+        discountType: discountType || 'none',
+        discountValue: discountValue !== undefined ? Number(discountValue) : 0,
         subcategory,
         bestseller: bestseller === "true" ? true : false,
         sizes: JSON.parse(sizes),
@@ -51,7 +54,18 @@ const addProduct = async (req, res) => {
 // function for List product
 const listProducts = async (req, res) => {
   try {
-    const products = await productModel.find({});
+    const { search, limit } = req.query
+
+    const query = {}
+    if (search) {
+      const re = new RegExp(String(search).trim(), 'i')
+      query.$or = [{ name: re }, { description: re }]
+    }
+
+    let q = productModel.find(query)
+    if (limit) q = q.limit(Math.min(Number(limit) || 0, 100))
+
+    const products = await q
     res.json({ success: true, products });
   } catch (error) {
     console.log(error);
@@ -87,10 +101,51 @@ const singleProduct = async (req,res) => {
   }
 }
 
+// GET /api/product/:id/related?limit=8
+const relatedProducts = async (req, res) => {
+  try {
+    const { id } = req.params
+    const limit = Math.min(Number(req.query.limit) || 8, 12)
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.json({ success: false, message: 'Invalid product id' })
+    }
+
+    const product = await productModel.findById(id).lean()
+    if (!product) {
+      return res.json({ success: false, message: 'Product not found' })
+    }
+
+    const primary = await productModel
+      .find({ _id: { $ne: id }, category: product.category })
+      .sort({ date: -1 })
+      .limit(limit)
+      .lean()
+
+    if (primary.length >= limit) {
+      return res.json({ success: true, products: primary })
+    }
+
+    const remaining = limit - primary.length
+    const excludeIds = [id, ...primary.map((p) => String(p._id))]
+
+    const fallback = await productModel
+      .aggregate([
+        { $match: { _id: { $nin: excludeIds.map((x) => new mongoose.Types.ObjectId(x)) } } },
+        { $sample: { size: remaining } },
+      ])
+
+    res.json({ success: true, products: [...primary, ...fallback] })
+  } catch (error) {
+    console.log(error)
+    res.json({ success: false, message: error.message })
+  }
+}
+
 // function for update product (admin)
 const updateProduct = async (req, res) => {
   try {
-    const { id, name, description, category, price, subcategory, bestseller, sizes } = req.body
+    const { id, name, description, category, price, subcategory, bestseller, sizes, discountType, discountValue } = req.body
 
     if (!id) {
       return res.json({ success: false, message: 'Missing product id' })
@@ -133,6 +188,8 @@ const updateProduct = async (req, res) => {
       category,
       subcategory,
       price: price !== undefined ? Number(price) : current.price,
+      discountType: discountType || current.discountType || 'none',
+      discountValue: discountValue !== undefined ? Number(discountValue) : (current.discountValue || 0),
       bestseller: bestseller === "true" ? true : false,
       sizes: sizes ? JSON.parse(sizes) : current.sizes,
       image: finalImages,
@@ -147,4 +204,4 @@ const updateProduct = async (req, res) => {
 }
 
 
-export {listProducts, addProduct, removeProduct, singleProduct, updateProduct}
+export {listProducts, addProduct, removeProduct, singleProduct, updateProduct, relatedProducts}

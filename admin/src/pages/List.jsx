@@ -67,11 +67,38 @@ const List = ({token}) => {
       {/* -------------- Product List --------------- */}
       {
         list.map((item,index) => (
+          (() => {
+            const base = Number(item.price || 0)
+            const type = item.discountType || 'none'
+            const value = Number(item.discountValue || 0)
+            const finalPrice =
+              !value || type === 'none'
+                ? base
+                : type === 'percentage'
+                  ? Math.max(0, Math.round(base * (1 - value / 100)))
+                  : Math.max(0, base - value)
+
+            const discountLabel =
+              !value || type === 'none'
+                ? ''
+                : type === 'percentage'
+                  ? `-${value}%`
+                  : `Giảm ${formatPrice(value)}`
+
+            return (
           <div className='grid grid-cols-[1fr_3fr_1fr] md:grid-cols-[1fr_3fr_1fr_1fr_1fr] items-center gap-2 py-1 px-2 border text-sm ' key={index}>
             <img className='w-12' src={item.image[0]} alt="" />
               <p>{item.name}</p>
               <p>{getCategoryLabel(item.category)}</p>
-              <p>{formatPrice(item.price)}</p>
+              <div>
+                <p className='font-medium'>{formatPrice(finalPrice)}</p>
+                {discountLabel ? (
+                  <p className='text-xs text-gray-400'>
+                    <span className='line-through'>{formatPrice(base)}</span>{' '}
+                    <span>({discountLabel})</span>
+                  </p>
+                ) : null}
+              </div>
               <div className='flex justify-end md:justify-center gap-2'>
                 <button
                   type='button'
@@ -89,6 +116,8 @@ const List = ({token}) => {
                 </button>
               </div>
           </div>
+            )
+          })()
         ))
       }
     

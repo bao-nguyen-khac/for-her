@@ -1,20 +1,23 @@
-import React, { useContext, useEffect, useMemo, useState } from 'react'
+import React, { useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { ShopContext } from '../context/ShopContext';
 import { assets } from '../assets/assets';
 import Title from '../components/Title';
 import ProductItem from '../components/ProductItem';
 import { useSearchParams } from 'react-router-dom';
 import { CATEGORIES, getCategoryLabel, normalizeCategorySlug } from '../constants/categories';
+import axios from 'axios';
 const Collection = () => {
   
 
-  const {products, search, showSearch } = useContext(ShopContext);
+  const {products, search, showSearch, backendUrl, getFinalPrice } = useContext(ShopContext);
   const [searchParams] = useSearchParams();
   const [showFilter, setShowFilter] = useState(false);
   const [filterProducts, setFilterProducts] = useState([]);
+  const [searchBaseProducts, setSearchBaseProducts] = useState(null);
   const [category, setCategory] = useState([]);
   const [SubCategory, setSubCategory] = useState([]);
   const [sortType, setSortType] = useState('relavent');
+  const searchTimerRef = useRef(null);
 
   const subCategoryOptions = useMemo(() => {
     const values = products.map((p) => p?.subcategory).filter(Boolean)
@@ -45,11 +48,9 @@ const Collection = () => {
   }
 
   const applyFilter = () => {
-    let productsCopy = products.slice();
-
-    if(showSearch && search){
-      productsCopy = productsCopy.filter(item => item.name.toLowerCase().includes(search.toLowerCase()))
-    }
+    let productsCopy = (showSearch && search && Array.isArray(searchBaseProducts))
+      ? searchBaseProducts.slice()
+      : products.slice();
 
     if(category.length > 0){
       productsCopy = productsCopy.filter((item) =>
@@ -70,11 +71,11 @@ const Collection = () => {
 
      switch (sortType) {
       case 'low-high':
-        setFilterProducts(fpCopy.sort((a,b) => (a.price - b.price)));
+        setFilterProducts(fpCopy.sort((a,b) => (getFinalPrice(a) - getFinalPrice(b))));
         break;
 
         case 'high-low':
-          setFilterProducts(fpCopy.sort((a,b) => (b.price -a.price)));
+          setFilterProducts(fpCopy.sort((a,b) => (getFinalPrice(b) - getFinalPrice(a))));
           break;
 
         default:
@@ -95,8 +96,35 @@ const Collection = () => {
   }, [searchParams]);
 
   useEffect(() => {
-       applyFilter();
-  },[category, SubCategory,search, showSearch,products])
+    // Debounced API search (350ms) when user is searching
+    if (showSearch && search) {
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
+      searchTimerRef.current = setTimeout(async () => {
+        try {
+          const response = await axios.get(
+            `${backendUrl}/api/product/list?search=${encodeURIComponent(search)}&limit=60`,
+          )
+          if (response.data.success) {
+            setSearchBaseProducts(response.data.products || [])
+          } else {
+            setSearchBaseProducts(null)
+          }
+        } catch {
+          setSearchBaseProducts(null)
+        }
+      }, 350)
+    } else {
+      setSearchBaseProducts(null)
+    }
+
+    return () => {
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
+    }
+  }, [showSearch, search, backendUrl])
+
+  useEffect(() => {
+    applyFilter()
+  }, [category, SubCategory, products, showSearch, search, searchBaseProducts])
 
 
   useEffect(() => {
@@ -180,7 +208,15 @@ const Collection = () => {
         <div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 gap-y-6'>
            {
             filterProducts.map((item, index) => (
-              <ProductItem key={index} name={item.name} id={item._id} price={item.price} image={item.image} />
+              <ProductItem
+                key={index}
+                name={item.name}
+                id={item._id}
+                price={item.price}
+                discountType={item.discountType}
+                discountValue={item.discountValue}
+                image={item.image}
+              />
             ))
            }  
         </div>

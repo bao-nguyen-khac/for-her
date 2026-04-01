@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { assets } from '../assets/assets'
 import axios from 'axios'
-import { backendUrl } from '../App'
+import { backendUrl, formatPrice } from '../App'
 import { toast } from 'react-toastify'
 import { CATEGORIES } from '../constants/categories'
 
@@ -22,6 +22,8 @@ const Add = ({token}) => {
  const [bestseller, setBestseller] = useState(false);
  const [sizes, setSizes] = useState([]);
  const [subCategoryOptions, setSubCategoryOptions] = useState([]);
+ const [discountType, setDiscountType] = useState('none');
+ const [discountValue, setDiscountValue] = useState('');
 
  useEffect(() => {
   const loadSubCategories = async () => {
@@ -54,6 +56,8 @@ const Add = ({token}) => {
    formData.append("name",name)
    formData.append("description",description)
    formData.append("price",price)
+   formData.append("discountType", discountType)
+   formData.append("discountValue", discountValue === '' ? 0 : discountValue)
    formData.append("category",category)
    formData.append("subcategory",subCategory)
    formData.append("bestseller",bestseller)
@@ -75,6 +79,8 @@ const Add = ({token}) => {
     setImage3(false)
     setImage4(false)
     setPrice('')
+    setDiscountType('none')
+    setDiscountValue('')
   } else {
     toast.error('Không thể thêm sản phẩm')
   }
@@ -159,6 +165,42 @@ const Add = ({token}) => {
         <input onChange={(e) => setPrice(e.target.value)} value={price} className='w-full px-3 py-2 sm:w-[120px]'  type='Number' placeholder='25' />
       </div>
 
+    </div>
+
+    <div className='flex flex-col sm:flex-row gap-2 w-full sm:gap-8'>
+      <div>
+        <p className='mb-2'>Giảm giá</p>
+        <select value={discountType} onChange={(e) => setDiscountType(e.target.value)} className='w-full px-3 py-2'>
+          <option value='none'>Không</option>
+          <option value='percentage'>Theo %</option>
+          <option value='fixed'>Giảm số tiền</option>
+        </select>
+      </div>
+
+      <div>
+        <p className='mb-2'>Giá trị giảm</p>
+        <input
+          onChange={(e) => setDiscountValue(e.target.value)}
+          value={discountValue}
+          className='w-full px-3 py-2 sm:w-[160px]'
+          type='Number'
+          placeholder={discountType === 'percentage' ? '10' : '50000'}
+          disabled={discountType === 'none'}
+        />
+        {price && discountType !== 'none' ? (
+          <p className='text-xs text-gray-500 mt-1'>
+            Giá sau giảm:{' '}
+            {formatPrice(
+              Math.max(
+                0,
+                discountType === 'percentage'
+                  ? Math.round(Number(price) * (1 - Number(discountValue || 0) / 100))
+                  : Number(price) - Number(discountValue || 0),
+              ),
+            )}
+          </p>
+        ) : null}
+      </div>
     </div>
 
 
