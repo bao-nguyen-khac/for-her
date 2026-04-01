@@ -1,4 +1,4 @@
-import React, { useContext } from 'react'
+import React, { useContext, useState } from 'react'
 import { ShopContext } from '../context/ShopContext'
 import { Link } from 'react-router-dom'
 const ProductItem = ({id, image, name, price, discountType, discountValue}) => {
@@ -6,11 +6,20 @@ const ProductItem = ({id, image, name, price, discountType, discountValue}) => {
     const { formatPrice, getFinalPrice, getDiscountLabel } = useContext(ShopContext);
     const finalPrice = getFinalPrice({ price, discountType, discountValue })
     const discountLabel = getDiscountLabel({ price, discountType, discountValue })
+    const [loaded, setLoaded] = useState(false)
  
     return (
-    <Link className='text-gray-700 cursor-pointer'  to={`/product/${id}`} >
-    <div className='overflow-hidden relative' >
-      <img className='hover:scale-110 transition ease-in-out'  src={image[0]} alt="" />
+    <Link className='text-gray-700 cursor-pointer group'  to={`/product/${id}`} >
+    <div className='relative w-full aspect-[3/4] overflow-hidden rounded-lg bg-gray-100' >
+      {!loaded ? <div className='absolute inset-0 animate-pulse bg-gray-200/70' /> : null}
+      <img
+        loading="lazy"
+        decoding="async"
+        onLoad={() => setLoaded(true)}
+        className={`absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-110 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+        src={image?.[0]}
+        alt={name || ''}
+      />
       {discountLabel ? (
         <span className='absolute top-2 left-2 bg-red-600 text-white text-xs px-2 py-1 rounded'>
           {discountLabel}
@@ -26,4 +35,4 @@ const ProductItem = ({id, image, name, price, discountType, discountValue}) => {
   )
 }
 
-export default ProductItem
+export default React.memo(ProductItem)

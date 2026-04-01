@@ -9,15 +9,21 @@ import axios from 'axios';
 const Collection = () => {
   
 
-  const {products, search, showSearch, backendUrl, getFinalPrice } = useContext(ShopContext);
+  const {products, search, backendUrl } = useContext(ShopContext);
   const [searchParams] = useSearchParams();
+  const initialCategoryParam = searchParams.get('category');
   const [showFilter, setShowFilter] = useState(false);
   const [filterProducts, setFilterProducts] = useState([]);
-  const [searchBaseProducts, setSearchBaseProducts] = useState(null);
-  const [category, setCategory] = useState([]);
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ page: 1, limit: 12, total: 0, totalPages: 1 });
+  const [loading, setLoading] = useState(false);
+  const [category, setCategory] = useState(initialCategoryParam ? [initialCategoryParam] : []);
   const [SubCategory, setSubCategory] = useState([]);
   const [sortType, setSortType] = useState('relavent');
   const searchTimerRef = useRef(null);
+  const cacheRef = useRef(new Map());
+  const inFlightKeyRef = useRef('');
+  const didInitRef = useRef(false);
 
   const subCategoryOptions = useMemo(() => {
     const values = products.map((p) => p?.subcategory).filter(Boolean)
@@ -47,89 +53,87 @@ const Collection = () => {
     }
   }
 
-  const applyFilter = () => {
-    let productsCopy = (showSearch && search && Array.isArray(searchBaseProducts))
-      ? searchBaseProducts.slice()
-      : products.slice();
+  const fetchProducts = async ({ nextPage } = {}) => {
+    const currentPage = nextPage ?? page
+    const sortMap = {
+      relavent: 'newest',
+      'low-high': 'price_asc',
+      'high-low': 'price_desc',
+    }
+    const sort = sortMap[sortType] || 'newest'
 
-    if(category.length > 0){
-      productsCopy = productsCopy.filter((item) =>
-        category.includes(normalizeCategorySlug(item.category))
-      );
+    const params = new URLSearchParams()
+    params.set('compact', '1')
+    params.set('page', String(currentPage))
+    params.set('limit', '12')
+    params.set('sort', sort)
+
+    const q = String(search || '').trim()
+    if (q) params.set('search', q)
+
+    if (category.length) params.set('category', category.join(','))
+    if (SubCategory.length) params.set('subcategory', SubCategory.join(','))
+
+    const key = params.toString()
+    const cached = cacheRef.current.get(key)
+    if (cached) {
+      setFilterProducts(cached.products)
+      setPagination(cached.pagination)
+      return
     }
 
-    if(SubCategory.length > 0){
-      productsCopy =  productsCopy.filter(item => SubCategory.includes(item.subcategory));
+    if (inFlightKeyRef.current === key) {
+      return
     }
+    inFlightKeyRef.current = key
 
-    setFilterProducts(productsCopy);
-  }
-
-
-  const sortProducts = () => {
-     let fpCopy = filterProducts.slice();
-
-     switch (sortType) {
-      case 'low-high':
-        setFilterProducts(fpCopy.sort((a,b) => (getFinalPrice(a) - getFinalPrice(b))));
-        break;
-
-        case 'high-low':
-          setFilterProducts(fpCopy.sort((a,b) => (getFinalPrice(b) - getFinalPrice(a))));
-          break;
-
-        default:
-          applyFilter();
-          break; 
-
-     }
-  }
-
-
-  useEffect(() => {
-    setFilterProducts(products);
-  },[])
-
-  useEffect(() => {
-    const categoryParam = searchParams.get('category');
-    if (categoryParam) setCategory([categoryParam]);
-  }, [searchParams]);
-
-  useEffect(() => {
-    // Debounced API search (350ms) when user is searching
-    if (showSearch && search) {
-      if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
-      searchTimerRef.current = setTimeout(async () => {
-        try {
-          const response = await axios.get(
-            `${backendUrl}/api/product/list?search=${encodeURIComponent(search)}&limit=60`,
-          )
-          if (response.data.success) {
-            setSearchBaseProducts(response.data.products || [])
-          } else {
-            setSearchBaseProducts(null)
-          }
-        } catch {
-          setSearchBaseProducts(null)
+    setLoading(true)
+    try {
+      const response = await axios.get(`${backendUrl}/api/product/list?${params.toString()}`)
+      if (response.data.success) {
+        const next = {
+          products: response.data.products || [],
+          pagination: response.data.pagination || { page: currentPage, limit: 12, total: 0, totalPages: 1 },
         }
-      }, 350)
-    } else {
-      setSearchBaseProducts(null)
+        cacheRef.current.set(key, next)
+        setFilterProducts(next.products)
+        setPagination(next.pagination)
+      }
+    } catch {
+      // fallback to local list if API fails
+      let productsCopy = products.slice()
+      if (q) productsCopy = productsCopy.filter((item) => item.name?.toLowerCase?.().includes(q.toLowerCase()))
+      if (category.length) productsCopy = productsCopy.filter((item) => category.includes(normalizeCategorySlug(item.category)))
+      if (SubCategory.length) productsCopy = productsCopy.filter((item) => SubCategory.includes(item.subcategory))
+      setFilterProducts(productsCopy.slice(0, 48))
+      setPagination({ page: 1, limit: 48, total: productsCopy.length, totalPages: 1 })
+    } finally {
+      setLoading(false)
+      if (inFlightKeyRef.current === key) inFlightKeyRef.current = ''
     }
+  }
+
+
+  useEffect(() => {
+    // Initial load (avoid duplicate requests in dev StrictMode via cache/in-flight)
+    if (didInitRef.current) return
+    didInitRef.current = true
+    fetchProducts({ nextPage: 1 })
+    setPage(1)
+  }, [])
+
+  useEffect(() => {
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
+    searchTimerRef.current = setTimeout(() => {
+      setPage(1)
+      // cache-busting is not needed; new query => new key => new cache entry
+      fetchProducts({ nextPage: 1 })
+    }, 350)
 
     return () => {
       if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
     }
-  }, [showSearch, search, backendUrl])
-
-  useEffect(() => {
-    applyFilter()
-  }, [category, SubCategory, products, showSearch, search, searchBaseProducts])
-
-
-  useEffect(() => {
-    sortProducts();
-  },[sortType])
+  }, [search, category, SubCategory, sortType, backendUrl])
 
   return (
     <div className='flex flex-col sm:flex-row gap-1 sm:gap-10 pt-10 border-t' >
@@ -219,6 +223,36 @@ const Collection = () => {
               />
             ))
            }  
+        </div>
+
+        <div className='flex items-center justify-between mt-8'>
+          <button
+            type='button'
+            onClick={() => {
+              const next = Math.max(1, page - 1)
+              setPage(next)
+              fetchProducts({ nextPage: next })
+            }}
+            disabled={page <= 1 || loading}
+            className='px-4 py-2 border rounded disabled:opacity-50'
+          >
+            Trước
+          </button>
+          <p className='text-sm text-gray-500'>
+            Trang {pagination.page} / {pagination.totalPages}
+          </p>
+          <button
+            type='button'
+            onClick={() => {
+              const next = Math.min(pagination.totalPages || 1, page + 1)
+              setPage(next)
+              fetchProducts({ nextPage: next })
+            }}
+            disabled={page >= (pagination.totalPages || 1) || loading}
+            className='px-4 py-2 border rounded disabled:opacity-50'
+          >
+            Sau
+          </button>
         </div>
       </div>
 

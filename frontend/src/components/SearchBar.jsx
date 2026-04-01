@@ -67,7 +67,7 @@ const SearchBar = () => {
         setLoading(true);
         lastQueryRef.current = q;
         const response = await axios.get(
-          `${backendUrl}/api/product/list?search=${encodeURIComponent(q)}&limit=6`,
+          `${backendUrl}/api/product/list?compact=1&search=${encodeURIComponent(q)}&limit=6&page=1`,
         );
         if (response.data.success && lastQueryRef.current === q) {
           setItems(response.data.products || []);

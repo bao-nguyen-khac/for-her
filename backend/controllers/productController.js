@@ -54,7 +54,7 @@ const addProduct = async (req, res) => {
 // function for List product
 const listProducts = async (req, res) => {
   try {
-    const { search, limit } = req.query
+    const { search, limit, page, category, subcategory, sort, compact } = req.query
 
     const query = {}
     if (search) {
@@ -62,11 +62,63 @@ const listProducts = async (req, res) => {
       query.$or = [{ name: re }, { description: re }]
     }
 
-    let q = productModel.find(query)
-    if (limit) q = q.limit(Math.min(Number(limit) || 0, 100))
+    if (category) {
+      const categories = String(category)
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+      if (categories.length) query.category = { $in: categories }
+    }
 
-    const products = await q
-    res.json({ success: true, products });
+    if (subcategory) {
+      const subcategories = String(subcategory)
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+      if (subcategories.length) query.subcategory = { $in: subcategories }
+    }
+
+    const pageNum = Math.max(1, Number(page) || 1)
+    const limitNum = Math.min(Math.max(1, Number(limit) || 60), 100)
+    const skipNum = (pageNum - 1) * limitNum
+
+    const isCompact = String(compact || '') === '1' || String(compact || '') === 'true'
+
+    const projection = isCompact
+      ? {
+          name: 1,
+          price: 1,
+          discountType: 1,
+          discountValue: 1,
+          category: 1,
+          subcategory: 1,
+          image: { $slice: 1 },
+          date: 1,
+        }
+      : undefined
+
+    let q = productModel.find(query, projection)
+
+    // sort
+    if (sort === 'price_asc') q = q.sort({ price: 1 })
+    else if (sort === 'price_desc') q = q.sort({ price: -1 })
+    else if (sort === 'newest') q = q.sort({ date: -1 })
+    else q = q.sort({ date: -1 })
+
+    q = q.skip(skipNum).limit(limitNum)
+
+    const [products, total] = await Promise.all([q.lean(), productModel.countDocuments(query)])
+
+    res.json({
+      success: true,
+      products,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        totalPages: Math.ceil(total / limitNum),
+      },
+    });
   } catch (error) {
     console.log(error);
     res.json({success:false, message: error.message})
@@ -101,11 +153,30 @@ const singleProduct = async (req,res) => {
   }
 }
 
+// GET /api/product/:id (detail)
+const productDetail = async (req, res) => {
+  try {
+    const { id } = req.params
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.json({ success: false, message: 'Invalid product id' })
+    }
+    const product = await productModel.findById(id).lean()
+    if (!product) {
+      return res.json({ success: false, message: 'Product not found' })
+    }
+    res.json({ success: true, product })
+  } catch (error) {
+    console.log(error)
+    res.json({ success: false, message: error.message })
+  }
+}
+
 // GET /api/product/:id/related?limit=8
 const relatedProducts = async (req, res) => {
   try {
     const { id } = req.params
     const limit = Math.min(Number(req.query.limit) || 8, 12)
+    const isCompact = String(req.query.compact || '') === '1' || String(req.query.compact || '') === 'true'
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.json({ success: false, message: 'Invalid product id' })
@@ -116,8 +187,21 @@ const relatedProducts = async (req, res) => {
       return res.json({ success: false, message: 'Product not found' })
     }
 
+    const projection = isCompact
+      ? {
+          name: 1,
+          price: 1,
+          discountType: 1,
+          discountValue: 1,
+          category: 1,
+          subcategory: 1,
+          image: { $slice: 1 },
+          date: 1,
+        }
+      : undefined
+
     const primary = await productModel
-      .find({ _id: { $ne: id }, category: product.category })
+      .find({ _id: { $ne: id }, category: product.category }, projection)
       .sort({ date: -1 })
       .limit(limit)
       .lean()
@@ -204,4 +288,4 @@ const updateProduct = async (req, res) => {
 }
 
 
-export {listProducts, addProduct, removeProduct, singleProduct, updateProduct, relatedProducts}
+export {listProducts, addProduct, removeProduct, singleProduct, productDetail, updateProduct, relatedProducts}

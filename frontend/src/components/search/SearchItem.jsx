@@ -16,6 +16,8 @@ const SearchItem = ({ product, onSelect }) => {
       <img
         src={product?.image?.[0]}
         alt=''
+        loading="lazy"
+        decoding="async"
         className='w-11 h-11 object-cover rounded-xl border border-gray-200 bg-white'
       />
       <div className='min-w-0 flex-1'>

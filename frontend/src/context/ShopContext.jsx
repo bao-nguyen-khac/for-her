@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { createContext } from "react";
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
@@ -18,6 +18,8 @@ const ShopContextProvider = (props) => {
     const [products, setProducts] = useState([]);
     const [token, setToken] = useState('')
     const navigate = useNavigate();
+    const productsLoadedRef = useRef(false);
+    const productsLoadingRef = useRef(false);
     const formatPrice = (value) =>
       new Intl.NumberFormat('vi-VN', {
         style: 'currency',
@@ -131,9 +133,13 @@ const ShopContextProvider = (props) => {
 
    const getProductData = async () => {
     try {
-      const response = await axios.get(backendUrl + '/api/product/list')
+      if (productsLoadedRef.current || productsLoadingRef.current) return
+      productsLoadingRef.current = true
+      // Load compact list for homepage/cards to reduce payload
+      const response = await axios.get(backendUrl + '/api/product/list?compact=1&limit=80&page=1&sort=newest')
       if(response.data.success){
         setProducts(response.data.products)
+        productsLoadedRef.current = true
       } else {
         toast.error(response.data.message)
       }
@@ -141,6 +147,8 @@ const ShopContextProvider = (props) => {
     } catch (error) {
         console.log(error);
         toast.error(error.message)
+    } finally {
+        productsLoadingRef.current = false
     }
    }
 

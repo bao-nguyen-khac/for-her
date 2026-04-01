@@ -18,18 +18,29 @@ const Product = () => {
   const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '', name: '' });
 
   const fetchProductData = async () => {
-     products.map((item) => {
-      if(item._id === productId){
-        setProductData(item);
-        setImage(item.image[0]);
-        return null;
+    // Prefer detail API for full data (images/description/etc)
+    try {
+      const response = await axios.get(`${backendUrl}/api/product/${productId}`)
+      if (response.data.success) {
+        const p = response.data.product
+        setProductData(p)
+        setImage(p?.image?.[0] || '')
+        return
       }
-     })
+    } catch {
+      // fallback to list data below
+    }
+
+    const fallback = products.find((item) => String(item._id) === String(productId))
+    if (fallback) {
+      setProductData(fallback)
+      setImage(fallback?.image?.[0] || '')
+    }
   }
 
   useEffect(() => {
    fetchProductData();
-  }, [productId, products])
+  }, [productId, products, backendUrl])
 
   const loadReviews = async () => {
     try {
