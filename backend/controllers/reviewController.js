@@ -20,7 +20,7 @@ const getProductReviews = async (req, res) => {
   try {
     const { id } = req.params
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.json({ success: false, message: 'Invalid product id' })
+      return res.json({ success: false, message: 'ID sản phẩm không hợp lệ' })
     }
 
     const reviews = await reviewModel
@@ -54,22 +54,22 @@ const addProductReview = async (req, res) => {
     const { rating, comment, name } = req.body
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.json({ success: false, message: 'Invalid product id' })
+      return res.json({ success: false, message: 'ID sản phẩm không hợp lệ' })
     }
 
     const product = await productModel.findById(id).lean()
     if (!product) {
-      return res.json({ success: false, message: 'Product not found' })
+      return res.json({ success: false, message: 'Không tìm thấy sản phẩm' })
     }
 
     const ratingNum = Number(rating)
     if (!Number.isFinite(ratingNum) || ratingNum < 1 || ratingNum > 5) {
-      return res.json({ success: false, message: 'Rating must be between 1 and 5' })
+      return res.json({ success: false, message: 'Điểm đánh giá phải từ 1 đến 5' })
     }
 
     const commentText = String(comment || '').trim()
     if (!commentText) {
-      return res.json({ success: false, message: 'Comment is required' })
+      return res.json({ success: false, message: 'Vui lòng nhập nội dung đánh giá' })
     }
 
     const userId = parseUserFromTokenHeader(req)
@@ -81,7 +81,7 @@ const addProductReview = async (req, res) => {
     }
 
     if (!reviewerName) {
-      return res.json({ success: false, message: 'Name is required for guest review' })
+      return res.json({ success: false, message: 'Vui lòng nhập tên khi đánh giá với tư cách khách' })
     }
 
     const review = new reviewModel({
@@ -94,7 +94,7 @@ const addProductReview = async (req, res) => {
 
     await review.save()
 
-    res.json({ success: true, message: 'Review created', review })
+    res.json({ success: true, message: 'Tạo đánh giá thành công', review })
   } catch (error) {
     console.log(error)
     res.json({ success: false, message: error.message })
@@ -121,10 +121,10 @@ const removeReview = async (req, res) => {
   try {
     const { id } = req.body
     if (!id || !mongoose.Types.ObjectId.isValid(id)) {
-      return res.json({ success: false, message: 'Invalid review id' })
+      return res.json({ success: false, message: 'ID đánh giá không hợp lệ' })
     }
     await reviewModel.findByIdAndDelete(id)
-    res.json({ success: true, message: 'Review removed' })
+    res.json({ success: true, message: 'Xóa đánh giá thành công' })
   } catch (error) {
     console.log(error)
     res.json({ success: false, message: error.message })

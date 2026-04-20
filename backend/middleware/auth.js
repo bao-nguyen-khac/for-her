@@ -4,7 +4,7 @@ const authUser = async (req, res, next) => {
    
    const { token } = req.headers;
    if(!token){
-      return res.json({ success: false, message: "Please login first to place order!"})
+      return res.json({ success: false, message: "Vui lòng đăng nhập để tiếp tục"})
    }
 
 

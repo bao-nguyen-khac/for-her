@@ -13,6 +13,8 @@ const Add = ({token}) => {
  const [image2,setImage2] = useState(false)
  const [image3,setImage3] = useState(false)
  const [image4,setImage4] = useState(false)
+ const [imageUrls, setImageUrls] = useState([])
+ const [imageUrlInput, setImageUrlInput] = useState('')
 
  const [name, setName] = useState('');
  const [description, setDescription] = useState('');
@@ -51,6 +53,12 @@ const Add = ({token}) => {
 
    try {
     
+   const selectedFiles = [image1, image2, image3, image4].filter(Boolean)
+   if (imageUrls.length === 0 && selectedFiles.length === 0) {
+    toast.error('Vui lòng thêm ít nhất 1 ảnh')
+    return
+   }
+
    const formData = new FormData()
 
    formData.append("name",name)
@@ -62,6 +70,7 @@ const Add = ({token}) => {
    formData.append("subcategory",subCategory)
    formData.append("bestseller",bestseller)
    formData.append("sizes",JSON.stringify(sizes))
+   formData.append("existingImages", JSON.stringify(imageUrls))
 
   image1 && formData.append("image1",image1)
   image2 && formData.append("image2",image2)
@@ -78,6 +87,8 @@ const Add = ({token}) => {
     setImage2(false)
     setImage3(false)
     setImage4(false)
+    setImageUrls([])
+    setImageUrlInput('')
     setPrice('')
     setDiscountType('none')
     setDiscountValue('')
@@ -93,31 +104,113 @@ const Add = ({token}) => {
    }
  }
 
+ const addImageUrl = () => {
+  const url = imageUrlInput.trim()
+  if (!url) return
+  if (!/^https?:\/\//i.test(url)) {
+    toast.error('URL ảnh không hợp lệ')
+    return
+  }
+  setImageUrls((prev) => (prev.includes(url) ? prev : [...prev, url]))
+  setImageUrlInput('')
+ }
+
+ const removeImageUrl = (url) => {
+  setImageUrls((prev) => prev.filter((x) => x !== url))
+ }
+
+ const clearFileSlot = (slot) => {
+  if (slot === 1) setImage1(false)
+  if (slot === 2) setImage2(false)
+  if (slot === 3) setImage3(false)
+  if (slot === 4) setImage4(false)
+ }
+
 
   return (
     <form onSubmit={onsubmitHandler}  className='flex flex-col w-full items-start gap-3' >
       
     <div>
+      <p className='mb-2'>Thêm ảnh bằng URL</p>
+      <div className='flex gap-2 max-w-[500px] mb-3'>
+        <input
+          value={imageUrlInput}
+          onChange={(e) => setImageUrlInput(e.target.value)}
+          className='w-full px-3 py-2'
+          type='text'
+          placeholder='https://...'
+        />
+        <button type='button' onClick={addImageUrl} className='px-4 py-2 bg-black text-white'>
+          Thêm
+        </button>
+      </div>
+
+      {imageUrls.length > 0 ? (
+        <div className='flex flex-wrap gap-2 mb-3'>
+          {imageUrls.map((url) => (
+            <div key={url} className='relative'>
+              <img className='w-20 h-20 object-cover border rounded' src={url} alt='' />
+              <button
+                type='button'
+                onClick={() => removeImageUrl(url)}
+                className='absolute -top-2 -right-2 bg-black text-white w-6 h-6 rounded-full text-xs'
+                aria-label='Xoá ảnh'
+              >
+                X
+              </button>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
       <p className='mb-2'>Tải ảnh lên</p>
 
 
       <div className='flex gap-2' >
-        <label htmlFor="image1">
-          <img className='w-20' src={!image1 ? assets.upload_area : URL.createObjectURL(image1)} alt="" />
-          <input onChange={(e) =>setImage1(e.target.files[0]) }  type="file"  id="image1" hidden />
-        </label>
-        <label htmlFor="image2">
-          <img className='w-20' src={!image2 ? assets.upload_area : URL.createObjectURL(image2)} alt="" />
-          <input onChange={(e) =>setImage2(e.target.files[0]) } type="file"  id="image2" hidden />
-        </label>
-        <label htmlFor="image3">
-          <img className='w-20' src={!image3 ? assets.upload_area : URL.createObjectURL(image3)} alt="" />
-          <input onChange={(e) =>setImage3(e.target.files[0]) } type="file"  id="image3" hidden />
-        </label>
-        <label htmlFor="image4">
-          <img className='w-20' src={!image4 ? assets.upload_area : URL.createObjectURL(image4)} alt="" />
-          <input onChange={(e) =>setImage4(e.target.files[0]) } type="file"  id="image4" hidden />
-        </label>
+        <div className='relative'>
+          <label htmlFor="image1">
+            <img className='w-20' src={!image1 ? assets.upload_area : URL.createObjectURL(image1)} alt="" />
+            <input onChange={(e) =>setImage1(e.target.files[0]) }  type="file"  id="image1" hidden />
+          </label>
+          {image1 && (
+            <button type='button' onClick={() => clearFileSlot(1)} className='absolute -top-2 -right-2 bg-black text-white w-6 h-6 rounded-full text-xs'>
+              X
+            </button>
+          )}
+        </div>
+        <div className='relative'>
+          <label htmlFor="image2">
+            <img className='w-20' src={!image2 ? assets.upload_area : URL.createObjectURL(image2)} alt="" />
+            <input onChange={(e) =>setImage2(e.target.files[0]) } type="file"  id="image2" hidden />
+          </label>
+          {image2 && (
+            <button type='button' onClick={() => clearFileSlot(2)} className='absolute -top-2 -right-2 bg-black text-white w-6 h-6 rounded-full text-xs'>
+              X
+            </button>
+          )}
+        </div>
+        <div className='relative'>
+          <label htmlFor="image3">
+            <img className='w-20' src={!image3 ? assets.upload_area : URL.createObjectURL(image3)} alt="" />
+            <input onChange={(e) =>setImage3(e.target.files[0]) } type="file"  id="image3" hidden />
+          </label>
+          {image3 && (
+            <button type='button' onClick={() => clearFileSlot(3)} className='absolute -top-2 -right-2 bg-black text-white w-6 h-6 rounded-full text-xs'>
+              X
+            </button>
+          )}
+        </div>
+        <div className='relative'>
+          <label htmlFor="image4">
+            <img className='w-20' src={!image4 ? assets.upload_area : URL.createObjectURL(image4)} alt="" />
+            <input onChange={(e) =>setImage4(e.target.files[0]) } type="file"  id="image4" hidden />
+          </label>
+          {image4 && (
+            <button type='button' onClick={() => clearFileSlot(4)} className='absolute -top-2 -right-2 bg-black text-white w-6 h-6 rounded-full text-xs'>
+              X
+            </button>
+          )}
+        </div>
       </div>
     </div>
 

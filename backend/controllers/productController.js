@@ -8,10 +8,14 @@ const addProduct = async (req, res) => {
     try {        
       const { name, description, category, price, subcategory, bestseller, sizes, discountType, discountValue } = req.body
 
-      const image1 = req.files.image1 &&  req.files.image1[0]
-      const image2 = req.files.image2 &&  req.files.image2[0]
-      const image3 = req.files.image3 &&  req.files.image3[0]
-      const image4 = req.files.image4 &&  req.files.image4[0]
+      const existingImages = req.body.existingImages
+        ? JSON.parse(req.body.existingImages)
+        : []
+
+      const image1 = req.files?.image1 && req.files.image1[0]
+      const image2 = req.files?.image2 && req.files.image2[0]
+      const image3 = req.files?.image3 && req.files.image3[0]
+      const image4 = req.files?.image4 && req.files.image4[0]
 
       const  images = [image1, image2, image3, image4].filter((item) => item !== undefined )
 
@@ -23,6 +27,11 @@ const addProduct = async (req, res) => {
       );
      
 
+      const finalImages = [...(Array.isArray(existingImages) ? existingImages : []), ...imagesUrl].filter(Boolean)
+      if (!finalImages.length) {
+        return res.json({ success: false, message: 'Sản phẩm phải có ít nhất 1 ảnh' })
+      }
+
       const productData = {
         name,
         description,
@@ -33,7 +42,7 @@ const addProduct = async (req, res) => {
         subcategory,
         bestseller: bestseller === "true" ? true : false,
         sizes: JSON.parse(sizes),
-        image: imagesUrl,
+        image: finalImages,
         date: Date.now()
       }
 
@@ -41,7 +50,7 @@ const addProduct = async (req, res) => {
       const product = new productModel(productData);
       await product.save()
 
-      res.json({ success: true, message: 'Product Added successfully' });
+      res.json({ success: true, message: 'Thêm sản phẩm thành công' });
       
     } catch (error) {
       console.log(error);
@@ -90,6 +99,7 @@ const listProducts = async (req, res) => {
           price: 1,
           discountType: 1,
           discountValue: 1,
+          bestseller: 1,
           category: 1,
           subcategory: 1,
           image: { $slice: 1 },
@@ -131,7 +141,7 @@ const listProducts = async (req, res) => {
 const removeProduct = async (req,res) => {
    try {
     await productModel.findByIdAndDelete(req.body.id)
-    res.json({ success: true, message: 'Product removed successfully' });
+    res.json({ success: true, message: 'Xóa sản phẩm thành công' });
    } catch (error) {
     console.log(error);
     res.json({success:false, message: error.message})
@@ -158,11 +168,11 @@ const productDetail = async (req, res) => {
   try {
     const { id } = req.params
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.json({ success: false, message: 'Invalid product id' })
+      return res.json({ success: false, message: 'ID sản phẩm không hợp lệ' })
     }
     const product = await productModel.findById(id).lean()
     if (!product) {
-      return res.json({ success: false, message: 'Product not found' })
+      return res.json({ success: false, message: 'Không tìm thấy sản phẩm' })
     }
     res.json({ success: true, product })
   } catch (error) {
@@ -179,12 +189,12 @@ const relatedProducts = async (req, res) => {
     const isCompact = String(req.query.compact || '') === '1' || String(req.query.compact || '') === 'true'
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.json({ success: false, message: 'Invalid product id' })
+      return res.json({ success: false, message: 'ID sản phẩm không hợp lệ' })
     }
 
     const product = await productModel.findById(id).lean()
     if (!product) {
-      return res.json({ success: false, message: 'Product not found' })
+      return res.json({ success: false, message: 'Không tìm thấy sản phẩm' })
     }
 
     const projection = isCompact
@@ -232,7 +242,7 @@ const updateProduct = async (req, res) => {
     const { id, name, description, category, price, subcategory, bestseller, sizes, discountType, discountValue } = req.body
 
     if (!id) {
-      return res.json({ success: false, message: 'Missing product id' })
+      return res.json({ success: false, message: 'Thiếu ID sản phẩm' })
     }
 
     const existingImages = req.body.existingImages
@@ -256,14 +266,14 @@ const updateProduct = async (req, res) => {
     // If caller doesn't send existingImages, fall back to current images
     const current = await productModel.findById(id)
     if (!current) {
-      return res.json({ success: false, message: 'Product not found' })
+      return res.json({ success: false, message: 'Không tìm thấy sản phẩm' })
     }
 
     const baseImages = Array.isArray(existingImages) ? existingImages : current.image
     const finalImages = [...baseImages, ...imagesUrl].filter(Boolean)
 
     if (!finalImages.length) {
-      return res.json({ success: false, message: 'Product must have at least 1 image' })
+      return res.json({ success: false, message: 'Sản phẩm phải có ít nhất 1 ảnh' })
     }
 
     const updatedData = {
@@ -280,7 +290,7 @@ const updateProduct = async (req, res) => {
     }
 
     const product = await productModel.findByIdAndUpdate(id, updatedData, { new: true })
-    res.json({ success: true, message: 'Product Updated successfully', product })
+    res.json({ success: true, message: 'Cập nhật sản phẩm thành công', product })
   } catch (error) {
     console.log(error)
     res.json({ success: false, message: error.message })

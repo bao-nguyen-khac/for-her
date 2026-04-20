@@ -20,7 +20,7 @@ const placeOrder = async (req,res) => {
     await newOrder.save()
 
     await userModel.findByIdAndUpdate(userId, {cartData:{}})
-    res.json({success: true, message: 'Order Placed'})
+    res.json({success: true, message: 'Đặt hàng thành công'})
 
   } catch (error) {
     console.log(error)
@@ -64,7 +64,7 @@ const updateStatus = async (req, res) => {
   try{
     const {orderId, status} = req.body
     await orderModel.findByIdAndUpdate(orderId, {status})
-    res.json({success: true, message: "Order Status Updated"})
+    res.json({success: true, message: "Cập nhật trạng thái đơn hàng thành công"})
   } catch (error){
     console.log(error)
     res.json({success:false, message:error.message})
