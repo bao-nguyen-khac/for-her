@@ -8,6 +8,20 @@ const Orders = () => {
   const { backendUrl, token, formatPrice } = useContext(ShopContext);
   const [orderData, setOrderData] = useState([])
 
+  const getStatusLabel = (status) => {
+    const map = {
+      'Order Placed': 'Đã đặt hàng',
+      'Packing': 'Đang đóng gói',
+      'Shipped': 'Đã gửi hàng',
+      'Out for delivery': 'Đang giao',
+      'Delivered': 'Đã giao',
+      'pending': 'Chờ xử lý',
+      'completed': 'Hoàn tất',
+      'cancelled': 'Đã huỷ',
+    }
+    return map[status] || status
+  }
+
   const loadOrderData = async () => {
     try {
       if(!token) {
@@ -67,7 +81,7 @@ const Orders = () => {
             <div className='md:w-1/2 flex justify-between'>
               <div className='flex items-center gap-2'>
                 <p className='min-w-2 h-2 rounded-full bg-green-500'></p>
-                <p className='text-sm md:text-base'>{item.status}</p>
+                <p className='text-sm md:text-base'>{getStatusLabel(item.status)}</p>
               </div>
               <button  onClick={loadOrderData} className='border px-4 py-2 text-sm font-medium rounded-sm' >Theo dõi đơn</button>
             </div>
