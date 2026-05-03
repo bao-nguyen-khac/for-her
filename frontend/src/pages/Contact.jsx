@@ -15,8 +15,8 @@ const Contact = () => {
         <img className='w-full md:max-w-[480px]' src={assets.contact_img} alt="" />
         <div className='flex flex-col justify-center items-start gap-6'>
           <p className='font-semibold text-xl text-gray-600 ' >Cửa hàng</p>
-          <p className='text-gray-500' >54709 Willms Station <br /> Suite 350, Karcahi, Pakistan</p>
-          <p className='text-gray-500' >Điện thoại: +92 3432705821 <br /> Email: marqum987@gmail.com</p>
+          <p className='text-gray-500' >152 Hậu Giang P.6, Q.6, TP. Hồ Chí Minh</p>
+          <p className='text-gray-500' >Điện thoại: +84 123456789 <br /> Email: admin@gmail.com</p>
           <p className='font-semibold text-xl text-gray-600'>Hỗ trợ khách hàng</p>
           <p className='text-gray-500'>
             Chúng tôi luôn sẵn sàng hỗ trợ! Liên hệ để được tư vấn,<br/> 

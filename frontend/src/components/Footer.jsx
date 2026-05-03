@@ -53,8 +53,8 @@ const Footer = () => {
         <div>
             <p className='text-xl font-medium mb-5'>LIÊN HỆ</p>
             <ul className='flex flex-col gap-1 text-gray-600'>
-                <li>Điện thoại: +92 3432705821</li>
-                <li>Email: marqum029@gmail.com</li>
+                <li>Điện thoại: +84 123456789</li>
+                <li>Email: admin@gmail.com</li>
             </ul>
         </div>
 

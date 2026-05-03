@@ -4,28 +4,41 @@ import { backendUrl, formatPrice } from '../App'
 import { toast } from 'react-toastify'
 import { getCategoryLabel } from '../constants/categories'
 import { useNavigate } from 'react-router-dom'
+import AdminPagination from '../components/AdminPagination'
+
+const PAGE_SIZE = 10
 
 const List = ({token}) => {
   
   const [list,setList] = useState([])
+  const [page, setPage] = useState(1)
+  const [pagination, setPagination] = useState(null)
   const navigate = useNavigate()
   
-  const fetchList = async () => {
-    try {
-      
-    const response = await axios.get(backendUrl + '/api/product/list')
-    if (response.data.success) {
-      setList(response.data.products);
+  useEffect(() => {
+    let cancelled = false
+    const load = async () => {
+      try {
+        const response = await axios.get(backendUrl + '/api/product/list', {
+          params: { page, limit: PAGE_SIZE },
+        })
+        if (cancelled) return
+        if (response.data.success) {
+          setList(response.data.products)
+          setPagination(response.data.pagination ?? null)
+        } else {
+          toast.error('Không thể tải danh sách sản phẩm')
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.log(error)
+          toast.error('Không thể tải danh sách sản phẩm')
+        }
+      }
     }
-    else {
-      toast.error('Không thể tải danh sách sản phẩm')
-    }
-    
-    } catch (error) {
-      console.log(error)
-      toast.error('Không thể tải danh sách sản phẩm')
-    }
-  }
+    load()
+    return () => { cancelled = true }
+  }, [page])
 
   const removeproduct = async (id) => {
     try {
@@ -33,7 +46,18 @@ const List = ({token}) => {
     const response = await axios.post(backendUrl + '/api/product/remove', {id}, {headers:{token}})
     if(response.data.success){
       toast.success('Đã xoá sản phẩm')
-      await fetchList();
+      const r = await axios.get(backendUrl + '/api/product/list', {
+        params: { page, limit: PAGE_SIZE },
+      })
+      if (r.data.success) {
+        const { products, pagination: pag } = r.data
+        if (products.length === 0 && page > 1) {
+          setPage((p) => p - 1)
+        } else {
+          setList(products)
+          setPagination(pag ?? null)
+        }
+      }
     }
     else {
      toast.error('Không thể xoá sản phẩm')
@@ -44,10 +68,6 @@ const List = ({token}) => {
       toast.error('Không thể xoá sản phẩm')
     }
   } 
-
-  useEffect(() => {
-    fetchList()
-  },[])
   
   
   return (
@@ -66,7 +86,7 @@ const List = ({token}) => {
 
       {/* -------------- Product List --------------- */}
       {
-        list.map((item,index) => (
+        list.map((item) => (
           (() => {
             const base = Number(item.price || 0)
             const type = item.discountType || 'none'
@@ -86,7 +106,7 @@ const List = ({token}) => {
                   : `Giảm ${formatPrice(value)}`
 
             return (
-          <div className='grid grid-cols-[1fr_3fr_1fr] md:grid-cols-[1fr_3fr_1fr_1fr_1fr] items-center gap-2 py-1 px-2 border text-sm ' key={index}>
+          <div className='grid grid-cols-[1fr_3fr_1fr] md:grid-cols-[1fr_3fr_1fr_1fr_1fr] items-center gap-2 py-1 px-2 border text-sm ' key={item._id}>
             <img className='w-12' src={item.image[0]} alt="" />
               <p>{item.name}</p>
               <p>{getCategoryLabel(item.category)}</p>
@@ -120,6 +140,15 @@ const List = ({token}) => {
           })()
         ))
       }
+
+      <AdminPagination
+        page={pagination?.page ?? page}
+        totalPages={pagination?.totalPages ?? 1}
+        total={pagination?.total ?? 0}
+        pageSize={pagination?.limit ?? PAGE_SIZE}
+        onPageChange={setPage}
+        itemLabel="sản phẩm"
+      />
     
       </div>
     </>

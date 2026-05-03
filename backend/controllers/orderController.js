@@ -33,10 +33,26 @@ const placeOrder = async (req,res) => {
 // All Orders data for Admin panel
 
 const allOrders = async (req,res) => {
-  try {     
-    const orders = await orderModel.find({})
-    res.json({success: true, orders})
+  try {
+    const pageNum = Math.max(1, Number(req.body.page) || 1)
+    const limitNum = Math.min(Math.max(1, Number(req.body.limit) || 10), 100)
+    const skipNum = (pageNum - 1) * limitNum
 
+    const [orders, total] = await Promise.all([
+      orderModel.find({}).sort({ date: -1 }).skip(skipNum).limit(limitNum).lean(),
+      orderModel.countDocuments({}),
+    ])
+
+    res.json({
+      success: true,
+      orders,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        totalPages: Math.ceil(total / limitNum) || 1,
+      },
+    })
   } catch (error) {
       console.log(error)
       res.json({success:false, message:error.message})
