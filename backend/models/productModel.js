@@ -1,18 +1,15 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
-const productSchema = mongoose.Schema({
-    name: { type: String, required: true},
-    description: { type: String, required: true},
-    price: { type: Number, required: true},
-    discountType: { type: String, enum: ['percentage', 'fixed', 'none'], default: 'none' },
-    discountValue: { type: Number, default: 0 },
-    image: {type: Array, required: true},
-    category: { type: String, required: true},
-    subcategory: { type: String, required: true},
-    sizes: {type: Array, required: true},
-    bestseller: {type: Boolean},
-    date: { type: Number, required: true},
-})
+const productSchema = new mongoose.Schema(
+  {
+    categoryId: { type: mongoose.Schema.Types.ObjectId, ref: 'category', required: true },
+    name: { type: String, required: true },
+    description: { type: String, default: '' },
+    price: { type: Number, required: true },
+    bestseller: { type: Boolean, default: false },
+  },
+  { timestamps: true }
+);
 
 const productModel = mongoose.models.product || mongoose.model('product', productSchema);
 
