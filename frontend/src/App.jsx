@@ -14,6 +14,7 @@ import Profile from './pages/Profile'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import SearchBar from './components/SearchBar'
+import AIChatbot from './components/AIChatbot'
 
 const App = () => {
   return (
@@ -34,6 +35,7 @@ const App = () => {
       <Route path='/profile' element={<Profile />} />
       </Routes>
       <Footer />
+      <AIChatbot />
     </div>
   )
 }
