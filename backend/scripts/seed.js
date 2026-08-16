@@ -179,11 +179,18 @@ async function main() {
 
     for (let i = 0; i < 20; i++) {
       const category = pick(createdCategoryDocs);
+      const discountType = pick(['none', 'percentage', 'fixed']);
+      let discountValue = 0;
+      if (discountType === 'percentage') discountValue = pick([10, 15, 20, 25]);
+      if (discountType === 'fixed') discountValue = pick([50000, 100000, 150000]);
+
       const product = await productModel.create({
         categoryId: category._id,
         name: `Áo dài ${category.name} Mẫu ${i + 1}`,
         description: `Sản phẩm áo dài cao cấp tôn dáng, chất liệu lụa gấm tự nhiên.`,
         price: randInt(400_000, 1_800_000),
+        discountType,
+        discountValue,
         bestseller: maybe(0.3),
       });
       createdProducts.push(product);

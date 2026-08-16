@@ -53,6 +53,8 @@ async function formatProduct(productDoc) {
 
   return {
     ...pDoc,
+    discountType: pDoc.discountType || 'none',
+    discountValue: pDoc.discountValue || 0,
     image: imageArray.length > 0 ? imageArray : ['https://forhershop.vn/wp-content/uploads/2026/03/AD05244-QUA40XMI-2-1365x2048.webp'],
     sizes: sizes.length > 0 ? sizes : ['S', 'M', 'L'],
     category: categoryName,
@@ -65,7 +67,7 @@ async function formatProduct(productDoc) {
 // function for add product
 const addProduct = async (req, res) => {
   try {
-    const { name, description, category, price, subcategory, bestseller, sizes } = req.body;
+    const { name, description, category, price, subcategory, bestseller, sizes, discountType, discountValue } = req.body;
 
     const existingImages = req.body.existingImages ? JSON.parse(req.body.existingImages) : [];
 
@@ -116,6 +118,8 @@ const addProduct = async (req, res) => {
       name,
       description,
       price: Number(price),
+      discountType: discountType || 'none',
+      discountValue: discountValue !== undefined ? Number(discountValue) : 0,
       bestseller: bestseller === 'true' || bestseller === true,
     });
 
@@ -289,7 +293,7 @@ const relatedProducts = async (req, res) => {
 // function for update product (admin)
 const updateProduct = async (req, res) => {
   try {
-    const { id, name, description, price, bestseller } = req.body;
+    const { id, name, description, price, bestseller, discountType, discountValue } = req.body;
 
     if (!id) {
       return res.json({ success: false, message: 'Thiếu ID sản phẩm' });
@@ -301,6 +305,8 @@ const updateProduct = async (req, res) => {
         name,
         description,
         price: Number(price),
+        discountType: discountType || 'none',
+        discountValue: discountValue !== undefined ? Number(discountValue) : 0,
         bestseller: bestseller === 'true' || bestseller === true,
       },
       { new: true }

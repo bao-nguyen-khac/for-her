@@ -35,6 +35,11 @@ async function backupAndMigrate() {
     if (collectionNames.includes(name)) {
       const backupName = `${name}_backup`;
       if (collectionNames.includes(backupName)) {
+        const count = await db.collection(name).countDocuments();
+        if (count === 0) {
+          console.log(`⚠️ Collection ${name} đang rỗng (0 docs), giữ nguyên bản backup ${backupName}...`);
+          continue;
+        }
         console.log(`⚠️ Collection ${backupName} đã tồn tại, đang xóa bản backup cũ...`);
         await db.collection(backupName).drop();
       }
@@ -126,6 +131,8 @@ async function backupAndMigrate() {
         name: p.name,
         description: p.description || '',
         price: Number(p.price) || 0,
+        discountType: p.discountType || 'none',
+        discountValue: Number(p.discountValue) || 0,
         bestseller: Boolean(p.bestseller),
         createdAt: p.date ? new Date(p.date) : new Date(),
         updatedAt: new Date(),
@@ -184,13 +191,19 @@ async function backupAndMigrate() {
         { upsert: true }
       );
 
-      // Create Cart
-      const cartRes = await db.collection('carts').insertOne({
-        userId: u._id,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      });
-      const cartId = cartRes.insertedId;
+      // Create/Get Cart
+      let cartDoc = await db.collection('carts').findOne({ userId: u._id });
+      let cartId;
+      if (!cartDoc) {
+        const cartRes = await db.collection('carts').insertOne({
+          userId: u._id,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+        cartId = cartRes.insertedId;
+      } else {
+        cartId = cartDoc._id;
+      }
 
       // Migrate cartData if available
       if (u.cartData && typeof u.cartData === 'object') {
