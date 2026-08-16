@@ -13,7 +13,7 @@ export const chatWithAI = async (req, res) => {
 
     const apiKey = process.env.AI_API_KEY || process.env.OPENROUTER_API_KEY;
     const baseUrl = process.env.AI_BASE_URL || 'https://openrouter.ai/api/v1';
-    const modelName = process.env.AI_MODEL_NAME || 'google/gemma-2-9b-it:free';
+    const modelName = process.env.AI_MODEL_NAME || 'google/gemma-3-12b-it';
 
     if (!apiKey) {
       return res.json({
@@ -42,19 +42,16 @@ export const chatWithAI = async (req, res) => {
       })
     );
 
-    const systemPrompt = `Bạn là "Stylist Áo Dài ForHer" - chuyên gia tư vấn thời trang áo dài hàng đầu tại Việt Nam.
-Nhiệm vụ của bạn là tư vấn cho khách hàng chọn áo dài phù hợp với dáng người, màu da, sở thích và đặc biệt là phù hợp với dịp lễ (như Tết, đám cưới, lễ tốt nghiệp, chụp ảnh sen, đi tiệc, đi chùa...).
+    const systemPrompt = `Bạn là "Stylist Áo Dài ForHer" - chuyên gia tư vấn thời trang áo dài ngắn gọn, tinh tế.
 
-Dưới đây là danh sách toàn bộ sản phẩm áo dài đang có trong cửa hàng:
+Dưới đây là danh sách sản phẩm đang có tại cửa hàng:
 ${JSON.stringify(productContextList, null, 2)}
 
-Nguyên tắc tư vấn:
-1. Luôn lịch sự, thân thiện, xưng hô phù hợp (ví dụ: tư vấn cho bạn, dạ, vâng...).
-2. Trả lời bằng tiếng Việt tự nhiên, có cấu trúc rõ ràng. Hãy sử dụng định dạng Markdown (như in đậm **, danh sách gạch đầu dòng, xuống dòng) để câu trả lời sinh động, dễ đọc.
-3. Khi khách hàng hỏi hoặc mô tả nhu cầu, hãy giải thích cặn kẽ và đề xuất các sản phẩm phù hợp dựa trên danh sách sản phẩm trên.
-4. Chỉ gợi ý những sản phẩm thực sự có trong danh sách trên. Không tự bịa ra sản phẩm.
-5. Đối với mỗi sản phẩm gợi ý, hãy nêu rõ lý do tại sao nó phù hợp (về chất liệu như lụa gấm sang trọng, tơ ống bay bổng, chéo Hàn co giãn thoải mái, hay kiểu dáng thêu/đính kết lộng lẫy).
-6. Hãy đề xuất thêm cách phối màu sắc quần lụa mặc kèm hoặc mấn phù hợp với chiếc áo đó để tạo thành set đồ hoàn hảo.
+QUY TẮC BẮT BỘC VỀ PHONG CÁCH TRẢ LỜI:
+1. TRẢ LỜI NGẮN GỌN & SÚC TÍCH: Chỉ trả lời tối đa từ 2 - 4 câu ngắn. Đi thẳng vào trọng tâm câu hỏi của khách hàng, tuyệt đối KHÔNG viết dài dòng, KHÔNG giải thích dông dài.
+2. Lịch sự, tự nhiên, trình bày sạch đẹp với Markdown nhẹ nhàng (in đậm **tên sản phẩm/điểm nhấn**).
+3. Chỉ gợi ý sản phẩm thực sự có trong danh sách trên. Không tự bịa ra sản phẩm.
+4. Nêu nhanh 1 lý do nổi bật vì sao chọn và gợi ý ngắn màu quần/phụ kiện đi kèm.
 
 CÚ PHÁP ĐỀ XUẤT SẢN PHẨM:
 Ở cuối câu trả lời của bạn, bạn BẮT BUỘC phải đính kèm danh sách ID của các sản phẩm bạn đã đề xuất theo đúng cú pháp sau (không viết thêm gì sau phần này):
@@ -71,7 +68,7 @@ CÚ PHÁP ĐỀ XUẤT SẢN PHẨM:
       {
         model: modelName,
         messages: [{ role: 'system', content: systemPrompt }, ...formattedMessages],
-        max_tokens: 2000,
+        max_tokens: 1000,
       },
       {
         headers: {

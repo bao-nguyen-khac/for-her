@@ -3,33 +3,79 @@ import { ShopContext } from '../context/ShopContext';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 
+const INACTIVITY_LIMIT = 5 * 60 * 1000; // 5 phút (300.000 ms)
+
+const DEFAULT_MESSAGES = [
+  {
+    role: 'assistant',
+    content: 'Chào bạn! Mình là **Stylist Áo Dài ForHer** 🌸. Mình có thể hỗ trợ bạn chọn chất liệu (lụa gấm, tơ óng, chéo Hàn), phối màu quần mặc kèm hoặc gợi ý mẫu áo dài phù hợp nhất cho các dịp Tết, cưới hỏi, lễ tiệc... \n\nBạn cần mình tư vấn như thế nào hôm nay?',
+    recommendedProducts: []
+  }
+];
+
 const AIChatbot = () => {
   const { backendUrl, formatPrice, getFinalPrice, getDiscountLabel } = useContext(ShopContext);
   const [isOpen, setIsOpen] = useState(false);
+  const [lastActivity, setLastActivity] = useState(() => {
+    const savedTime = localStorage.getItem('forher_ai_chat_timestamp') || sessionStorage.getItem('forher_ai_chat_timestamp');
+    return savedTime ? Number(savedTime) : Date.now();
+  });
+
   const [messages, setMessages] = useState(() => {
-    const saved = sessionStorage.getItem('forher_ai_chat');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error(e);
+    const saved = localStorage.getItem('forher_ai_chat') || sessionStorage.getItem('forher_ai_chat');
+    const savedTime = localStorage.getItem('forher_ai_chat_timestamp') || sessionStorage.getItem('forher_ai_chat_timestamp');
+
+    if (saved && savedTime) {
+      const elapsed = Date.now() - Number(savedTime);
+      if (elapsed < INACTIVITY_LIMIT) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {
+          console.error(e);
+        }
       }
     }
-    return [
-      {
-        role: 'assistant',
-        content: 'Chào bạn! Mình là **Stylist Áo Dài ForHer** 🌸. Mình có thể hỗ trợ bạn chọn chất liệu (lụa gấm, tơ óng, chéo Hàn), phối màu quần mặc kèm hoặc gợi ý mẫu áo dài phù hợp nhất cho các dịp Tết, cưới hỏi, lễ tiệc... \n\nBạn cần mình tư vấn như thế nào hôm nay?',
-        recommendedProducts: []
-      }
-    ];
+    // Xóa lịch sử hết hạn
+    localStorage.removeItem('forher_ai_chat');
+    localStorage.removeItem('forher_ai_chat_timestamp');
+    sessionStorage.removeItem('forher_ai_chat');
+    sessionStorage.removeItem('forher_ai_chat_timestamp');
+    return DEFAULT_MESSAGES;
   });
+
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef(null);
 
-  // Lưu lịch sử chat vào sessionStorage khi có tin nhắn mới
+  // Cập nhật lưu trữ và timestamp hoạt động
+  const updateChatStorage = (newMessages) => {
+    const now = Date.now();
+    setLastActivity(now);
+    localStorage.setItem('forher_ai_chat', JSON.stringify(newMessages));
+    localStorage.setItem('forher_ai_chat_timestamp', String(now));
+  };
+
+  // Kiểm tra tự động xóa lịch sử sau 5 phút không có hoạt động
   useEffect(() => {
-    sessionStorage.setItem('forher_ai_chat', JSON.stringify(messages));
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - lastActivity;
+      if (elapsed >= INACTIVITY_LIMIT) {
+        localStorage.removeItem('forher_ai_chat');
+        localStorage.removeItem('forher_ai_chat_timestamp');
+        sessionStorage.removeItem('forher_ai_chat');
+        sessionStorage.removeItem('forher_ai_chat_timestamp');
+        setMessages(DEFAULT_MESSAGES);
+      }
+    }, 10000); // Kiểm tra mỗi 10 giây
+
+    return () => clearInterval(interval);
+  }, [lastActivity]);
+
+  // Lưu lịch sử chat mỗi khi tin nhắn thay đổi (trừ tin mặc định)
+  useEffect(() => {
+    if (messages.length > 1) {
+      updateChatStorage(messages);
+    }
   }, [messages]);
 
   // Danh sách các câu hỏi nhanh gợi ý
@@ -57,13 +103,13 @@ const AIChatbot = () => {
     }
 
     const newUserMessage = { role: 'user', content: textToSend };
-    setMessages((prev) => [...prev, newUserMessage]);
+    const updatedMessages = [...messages, newUserMessage];
+    setMessages(updatedMessages);
+    updateChatStorage(updatedMessages);
     setIsLoading(true);
 
     try {
-      // Chuẩn bị lịch sử hội thoại gửi lên backend
-      // Chỉ gửi nội dung text để tiết kiệm payload
-      const chatHistory = [...messages, newUserMessage].map(msg => ({
+      const chatHistory = updatedMessages.map(msg => ({
         role: msg.role,
         content: msg.content
       }));
@@ -73,34 +119,40 @@ const AIChatbot = () => {
       });
 
       if (response.data.success) {
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: 'assistant',
-            content: response.data.reply,
-            recommendedProducts: response.data.recommendedProducts || []
-          }
-        ]);
+        const assistantMessage = {
+          role: 'assistant',
+          content: response.data.reply,
+          recommendedProducts: response.data.recommendedProducts || []
+        };
+        setMessages((prev) => {
+          const newMsgs = [...prev, assistantMessage];
+          updateChatStorage(newMsgs);
+          return newMsgs;
+        });
       } else {
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: 'assistant',
-            content: `Rất tiếc, đã xảy ra lỗi: ${response.data.message || 'Không thể kết nối dịch vụ.'}`,
-            recommendedProducts: []
-          }
-        ]);
+        const errorMessage = {
+          role: 'assistant',
+          content: `Rất tiếc, đã xảy ra lỗi: ${response.data.message || 'Không thể kết nối dịch vụ.'}`,
+          recommendedProducts: []
+        };
+        setMessages((prev) => {
+          const newMsgs = [...prev, errorMessage];
+          updateChatStorage(newMsgs);
+          return newMsgs;
+        });
       }
     } catch (error) {
       console.error(error);
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: 'assistant',
-          content: 'Không thể kết nối đến máy chủ. Vui lòng thử lại sau ít phút.',
-          recommendedProducts: []
-        }
-      ]);
+      const errorMessage = {
+        role: 'assistant',
+        content: 'Không thể kết nối đến máy chủ. Vui lòng thử lại sau ít phút.',
+        recommendedProducts: []
+      };
+      setMessages((prev) => {
+        const newMsgs = [...prev, errorMessage];
+        updateChatStorage(newMsgs);
+        return newMsgs;
+      });
     } finally {
       setIsLoading(false);
     }
@@ -112,7 +164,7 @@ const AIChatbot = () => {
     }
   };
 
-  // Hàm tự chế để parse markdown cơ bản (bôi đậm **, xuống dòng \n, gạch đầu dòng *)
+  // Hàm parse markdown cơ bản (bôi đậm **, xuống dòng \n, gạch đầu dòng *)
   const parseMarkdown = (text) => {
     if (!text) return '';
     const lines = text.split('\n');
@@ -166,12 +218,10 @@ const AIChatbot = () => {
         }}
       >
         {isOpen ? (
-          // Icon X đóng
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6">
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
           </svg>
         ) : (
-          // Icon Lấp lánh / Chat AI
           <div className="relative">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-7 h-7 animate-pulse">
               <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 21l-.813-5.096L3 15l5.096-.813L9 9l.813 5.187L15 15l-5.187.813zM18 10.5l-.375 2.625L15 13.5l2.625.375L18 16.5l.375-2.625L21 13.5l-2.625-.375L18 10.5z" />
@@ -238,7 +288,7 @@ const AIChatbot = () => {
                   )}
                 </div>
 
-                {/* Danh sách sản phẩm gợi ý đi kèm (nếu có) */}
+                {/* Danh sách sản phẩm gợi ý đi kèm */}
                 {!isUser && msg.recommendedProducts && msg.recommendedProducts.length > 0 && (
                   <div className="mt-3 w-full max-w-[90%]">
                     <p className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider mb-2">
@@ -251,7 +301,7 @@ const AIChatbot = () => {
                         return (
                           <div
                             key={prod._id}
-                            onClick={() => setIsOpen(false)} // Đóng chat khi click xem sản phẩm
+                            onClick={() => setIsOpen(false)}
                             className="bg-white border border-neutral-100 rounded-xl p-2 min-w-[130px] max-w-[130px] flex-shrink-0 cursor-pointer hover:shadow-md transition-shadow snap-start"
                           >
                             <Link to={`/product/${prod._id}`}>
@@ -296,7 +346,7 @@ const AIChatbot = () => {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Các gợi ý câu hỏi nhanh (chỉ hiện khi không loading) */}
+        {/* Các gợi ý câu hỏi nhanh */}
         {!isLoading && messages.length <= 2 && (
           <div className="px-4 py-2 border-t border-neutral-100 bg-white">
             <div className="flex gap-2 overflow-x-auto py-1 scrollbar-none">
