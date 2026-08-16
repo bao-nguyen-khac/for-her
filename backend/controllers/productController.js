@@ -112,14 +112,17 @@ const addProduct = async (req, res) => {
       targetCatId = subCat._id;
     }
 
+    const validDiscountType = ['percentage', 'fixed', 'none'].includes(discountType) ? discountType : 'none';
+    const validDiscountValue = Math.max(0, Number(discountValue) || 0);
+
     // Save Product
     const product = await productModel.create({
       categoryId: targetCatId,
       name,
       description,
       price: Number(price),
-      discountType: discountType || 'none',
-      discountValue: discountValue !== undefined ? Number(discountValue) : 0,
+      discountType: validDiscountType,
+      discountValue: validDiscountValue,
       bestseller: bestseller === 'true' || bestseller === true,
     });
 
@@ -299,14 +302,17 @@ const updateProduct = async (req, res) => {
       return res.json({ success: false, message: 'Thiếu ID sản phẩm' });
     }
 
+    const validDiscountType = ['percentage', 'fixed', 'none'].includes(discountType) ? discountType : 'none';
+    const validDiscountValue = Math.max(0, Number(discountValue) || 0);
+
     const updated = await productModel.findByIdAndUpdate(
       id,
       {
         name,
         description,
         price: Number(price),
-        discountType: discountType || 'none',
-        discountValue: discountValue !== undefined ? Number(discountValue) : 0,
+        discountType: validDiscountType,
+        discountValue: validDiscountValue,
         bestseller: bestseller === 'true' || bestseller === true,
       },
       { new: true }
