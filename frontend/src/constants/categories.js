@@ -7,14 +7,21 @@ export const CATEGORIES = [
   { slug: 'ao-dai-dinh-ket', label: 'Áo dài đính kết' },
 ];
 
+export const SUBCATEGORIES = [
+  'Dự tiệc',
+  'Cưới & Hỏi',
+  'Công sở',
+  'Cách tân',
+  'Học sinh',
+  'Nữ',
+];
+
 const CATEGORY_LABEL_BY_SLUG = CATEGORIES.reduce((acc, c) => {
   acc[c.slug] = c.label;
   return acc;
 }, {});
 
 // Backward-compat: hệ thống cũ dùng Men/Women/Kids làm category.
-// Không có mapping 1-1 sang các loại áo dài, nên tạm quy về "Áo dài truyền thống"
-// để UI/filter không bị hỏng cho data cũ.
 const LEGACY_CATEGORY_TO_SLUG = {
   Men: 'ao-dai-truyen-thong',
   Women: 'ao-dai-truyen-thong',
@@ -24,6 +31,9 @@ const LEGACY_CATEGORY_TO_SLUG = {
 export function normalizeCategorySlug(categoryValue) {
   if (!categoryValue) return '';
   if (CATEGORY_LABEL_BY_SLUG[categoryValue]) return categoryValue;
+  // If input is already Vietnamese label
+  const foundByLabel = CATEGORIES.find(c => c.label.toLowerCase() === categoryValue.toLowerCase());
+  if (foundByLabel) return foundByLabel.slug;
   return LEGACY_CATEGORY_TO_SLUG[categoryValue] || categoryValue;
 }
 
@@ -31,4 +41,3 @@ export function getCategoryLabel(categoryValue) {
   const slug = normalizeCategorySlug(categoryValue);
   return CATEGORY_LABEL_BY_SLUG[slug] || categoryValue || '';
 }
-

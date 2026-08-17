@@ -1,11 +1,9 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { assets } from '../assets/assets'
 import axios from 'axios'
 import { backendUrl, formatPrice } from '../App'
 import { toast } from 'react-toastify'
-import { CATEGORIES } from '../constants/categories'
-
-
+import { CATEGORIES, SUBCATEGORIES } from '../constants/categories'
 
 const Add = ({token}) => {
 
@@ -20,12 +18,17 @@ const Add = ({token}) => {
  const [description, setDescription] = useState('');
  const [price, setPrice] = useState('');
  const [category, setCategory] = useState(CATEGORIES[0]?.slug || 'ao-dai-truyen-thong');
- const [subCategory, setSubCategory] = useState('');
+ const [subCategory, setSubCategory] = useState(SUBCATEGORIES[0] || 'Dự tiệc');
  const [bestseller, setBestseller] = useState(false);
  const [sizes, setSizes] = useState([]);
  const [subCategoryOptions, setSubCategoryOptions] = useState([]);
  const [discountType, setDiscountType] = useState('none');
  const [discountValue, setDiscountValue] = useState('');
+
+ const subCategoryList = useMemo(() => {
+  const dynamic = (subCategoryOptions || []).filter(v => v && v !== 'Mặc định');
+  return Array.from(new Set([...SUBCATEGORIES, ...dynamic]));
+ }, [subCategoryOptions]);
 
  useEffect(() => {
   const loadSubCategories = async () => {
@@ -37,9 +40,6 @@ const Add = ({token}) => {
           .filter(Boolean)
         const unique = Array.from(new Set(values))
         setSubCategoryOptions(unique)
-        if (!subCategory && unique.length) {
-          setSubCategory(unique[0])
-        }
       }
     } catch (error) {
       // silent fallback
@@ -53,8 +53,14 @@ const Add = ({token}) => {
 
    try {
     
+   let finalImageUrls = [...imageUrls];
+   const pendingUrl = imageUrlInput.trim();
+   if (pendingUrl && /^https?:\/\//i.test(pendingUrl) && !finalImageUrls.includes(pendingUrl)) {
+     finalImageUrls.push(pendingUrl);
+   }
+
    const selectedFiles = [image1, image2, image3, image4].filter(Boolean)
-   if (imageUrls.length === 0 && selectedFiles.length === 0) {
+   if (finalImageUrls.length === 0 && selectedFiles.length === 0) {
     toast.error('Vui lòng thêm ít nhất 1 ảnh')
     return
    }
@@ -70,7 +76,7 @@ const Add = ({token}) => {
    formData.append("subcategory",subCategory)
    formData.append("bestseller",bestseller)
    formData.append("sizes",JSON.stringify(sizes))
-   formData.append("existingImages", JSON.stringify(imageUrls))
+   formData.append("existingImages", JSON.stringify(finalImageUrls))
 
   image1 && formData.append("image1",image1)
   image2 && formData.append("image2",image2)
@@ -93,7 +99,7 @@ const Add = ({token}) => {
     setDiscountType('none')
     setDiscountValue('')
   } else {
-    toast.error('Không thể thêm sản phẩm')
+    toast.error(response.data.message || 'Không thể thêm sản phẩm')
   }
   
 
@@ -229,7 +235,7 @@ const Add = ({token}) => {
 
       <div>
         <p className='mb-2' >Danh mục</p>
-        <select onChange={(e) => setCategory(e.target.value)} className='w-full px-3 py-2'>
+        <select value={category} onChange={(e) => setCategory(e.target.value)} className='w-full px-3 py-2'>
           {CATEGORIES.map((c) => (
             <option key={c.slug} value={c.slug}>{c.label}</option>
           ))}
@@ -238,18 +244,10 @@ const Add = ({token}) => {
 
       <div>
         <p className='mb-2' >Loại</p>
-        <select value={subCategory} onChange={(e) => setSubCategory(e.target.value)}  className='w-full px-3 py-2' >
-          {subCategoryOptions.length > 0 ? (
-            subCategoryOptions.map((v) => (
-              <option key={v} value={v}>{v}</option>
-            ))
-          ) : (
-            <>
-              <option value="Topwear">Topwear</option>
-              <option value="Bottomwear">Bottomwear</option>
-              <option value="Winterwear">Winterwear</option>
-            </>
-          )}
+        <select value={subCategory} onChange={(e) => setSubCategory(e.target.value)} className='w-full px-3 py-2'>
+          {subCategoryList.map((v) => (
+            <option key={v} value={v}>{v}</option>
+          ))}
         </select>
       </div>
 

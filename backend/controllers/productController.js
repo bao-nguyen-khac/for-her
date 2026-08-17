@@ -18,6 +18,55 @@ function slugify(text) {
     .replace(/-+/g, '-');
 }
 
+const CATEGORY_MAP = {
+  'ao-dai-truyen-thong': 'Áo dài truyền thống',
+  'ao-dai-lua-gam': 'Áo dài lụa gấm',
+  'ao-dai-cheo-han': 'Áo dài chéo Hàn',
+  'ao-dai-theu': 'Áo dài thêu',
+  'ao-dai-to-ong': 'Áo dài tơ ống',
+  'ao-dai-dinh-ket': 'Áo dài đính kết',
+  Men: 'Áo dài truyền thống',
+  Women: 'Áo dài truyền thống',
+  Kids: 'Áo dài truyền thống',
+};
+
+async function findOrCreateCategory(categoryInput, subcategoryInput) {
+  if (!categoryInput) return null;
+  const catSlug = slugify(categoryInput);
+  const catName = CATEGORY_MAP[categoryInput] || CATEGORY_MAP[catSlug] || categoryInput;
+
+  let parentCat = await categoryModel.findOne({
+    $or: [{ slug: catSlug }, { name: catName }, { name: categoryInput }, { slug: slugify(catName) }],
+    parentId: null,
+  });
+
+  if (!parentCat) {
+    parentCat = await categoryModel.create({
+      name: catName,
+      slug: slugify(catName) || catSlug,
+      parentId: null,
+    });
+  }
+
+  if (subcategoryInput && subcategoryInput !== 'Mặc định') {
+    const subSlug = slugify(`${catName}-${subcategoryInput}`);
+    let subCat = await categoryModel.findOne({
+      name: subcategoryInput,
+      parentId: parentCat._id,
+    });
+    if (!subCat) {
+      subCat = await categoryModel.create({
+        name: subcategoryInput,
+        slug: subSlug,
+        parentId: parentCat._id,
+      });
+    }
+    return subCat._id;
+  }
+
+  return parentCat._id;
+}
+
 // Helper to format product with images, variants, and category names for frontend/admin backward compatibility
 async function formatProduct(productDoc) {
   if (!productDoc) return null;
@@ -32,8 +81,8 @@ async function formatProduct(productDoc) {
   const imageArray = images.map((img) => img.url);
   const sizes = Array.from(new Set(variants.map((v) => v.size)));
 
-  let categoryName = 'Mặc định';
-  let subcategoryName = 'Mặc định';
+  let categoryName = 'Áo dài truyền thống';
+  let subcategoryName = 'Nữ';
   if (pDoc.categoryId) {
     const cat = await categoryModel.findById(pDoc.categoryId).lean();
     if (cat) {
@@ -44,9 +93,11 @@ async function formatProduct(productDoc) {
           subcategoryName = cat.name;
         } else {
           categoryName = cat.name;
+          subcategoryName = '';
         }
       } else {
         categoryName = cat.name;
+        subcategoryName = '';
       }
     }
   }
@@ -58,7 +109,7 @@ async function formatProduct(productDoc) {
     image: imageArray.length > 0 ? imageArray : ['https://forhershop.vn/wp-content/uploads/2026/03/AD05244-QUA40XMI-2-1365x2048.webp'],
     sizes: sizes.length > 0 ? sizes : ['S', 'M', 'L'],
     category: categoryName,
-    subcategory: subcategoryName,
+    subcategory: subcategoryName || 'Nữ',
     variants,
     date: pDoc.createdAt ? new Date(pDoc.createdAt).getTime() : Date.now(),
   };
@@ -90,27 +141,8 @@ const addProduct = async (req, res) => {
       return res.json({ success: false, message: 'Sản phẩm phải có ít nhất 1 ảnh' });
     }
 
-    // Category lookup/creation
-    let parentCat = await categoryModel.findOne({ name: category || 'Áo dài' });
-    if (!parentCat) {
-      parentCat = await categoryModel.create({
-        name: category || 'Áo dài',
-        slug: slugify(category || 'Áo dài'),
-      });
-    }
-
-    let targetCatId = parentCat._id;
-    if (subcategory) {
-      let subCat = await categoryModel.findOne({ name: subcategory, parentId: parentCat._id });
-      if (!subCat) {
-        subCat = await categoryModel.create({
-          name: subcategory,
-          slug: slugify(`${category}-${subcategory}`),
-          parentId: parentCat._id,
-        });
-      }
-      targetCatId = subCat._id;
-    }
+    // Category lookup / creation
+    const targetCatId = await findOrCreateCategory(category || 'ao-dai-truyen-thong', subcategory);
 
     const validDiscountType = ['percentage', 'fixed', 'none'].includes(discountType) ? discountType : 'none';
     const validDiscountValue = Math.max(0, Number(discountValue) || 0);
@@ -158,12 +190,71 @@ const addProduct = async (req, res) => {
 // function for List product
 const listProducts = async (req, res) => {
   try {
-    const { search, limit, page, sort } = req.query;
+    const { search, limit, page, sort, category, subcategory } = req.query;
 
     const query = {};
     if (search) {
       const re = new RegExp(String(search).trim(), 'i');
       query.$or = [{ name: re }, { description: re }];
+    }
+
+    // Filter by category / subcategory
+    const catList = category ? String(category).split(',').map((s) => s.trim()).filter(Boolean) : [];
+    const subList = subcategory ? String(subcategory).split(',').map((s) => s.trim()).filter(Boolean) : [];
+
+    if (catList.length > 0 || subList.length > 0) {
+      let matchedCategoryIds = [];
+
+      if (catList.length > 0) {
+        const searchConditions = [];
+        for (const cat of catList) {
+          const slug = slugify(cat);
+          const name = CATEGORY_MAP[cat] || CATEGORY_MAP[slug] || cat;
+          searchConditions.push(
+            { slug: cat },
+            { slug: slug },
+            { name: name },
+            { name: new RegExp(`^${cat}$`, 'i') }
+          );
+        }
+
+        const parentCats = await categoryModel.find({ $or: searchConditions }).lean();
+        const parentIds = parentCats.map((c) => c._id);
+
+        const childCats = await categoryModel.find({ parentId: { $in: parentIds } }).lean();
+        const childIds = childCats.map((c) => c._id);
+
+        matchedCategoryIds = [...parentIds, ...childIds];
+      }
+
+      if (subList.length > 0) {
+        const subCats = await categoryModel.find({
+          name: { $in: subList.map((s) => new RegExp(`^${s}$`, 'i')) },
+        }).lean();
+        const subCatIds = subCats.map((c) => c._id);
+
+        if (catList.length > 0) {
+          const subSet = new Set(subCatIds.map(String));
+          matchedCategoryIds = matchedCategoryIds.filter((id) => subSet.has(String(id)));
+        } else {
+          matchedCategoryIds = subCatIds;
+        }
+      }
+
+      if (matchedCategoryIds.length === 0) {
+        return res.json({
+          success: true,
+          products: [],
+          pagination: {
+            page: Math.max(1, Number(page) || 1),
+            limit: Math.min(Math.max(1, Number(limit) || 60), 100),
+            total: 0,
+            totalPages: 0,
+          },
+        });
+      }
+
+      query.categoryId = { $in: matchedCategoryIds };
     }
 
     const pageNum = Math.max(1, Number(page) || 1);
@@ -189,7 +280,7 @@ const listProducts = async (req, res) => {
         page: pageNum,
         limit: limitNum,
         total,
-        totalPages: Math.ceil(total / limitNum),
+        totalPages: Math.ceil(total / limitNum) || 1,
       },
     });
   } catch (error) {
@@ -266,7 +357,6 @@ const relatedProducts = async (req, res) => {
 
     const primaryRaw = await productModel
       .find({ _id: { $ne: id }, categoryId: current.categoryId })
-      .sort({ createdAt: -1 })
       .limit(limit)
       .lean();
 
@@ -296,25 +386,110 @@ const relatedProducts = async (req, res) => {
 // function for update product (admin)
 const updateProduct = async (req, res) => {
   try {
-    const { id, name, description, price, bestseller, discountType, discountValue } = req.body;
+    const { id, name, description, category, subcategory, price, bestseller, discountType, discountValue } = req.body;
 
     if (!id) {
       return res.json({ success: false, message: 'Thiếu ID sản phẩm' });
     }
 
-    const validDiscountType = ['percentage', 'fixed', 'none'].includes(discountType) ? discountType : 'none';
-    const validDiscountValue = Math.max(0, Number(discountValue) || 0);
+    const updateData = {};
+    if (name !== undefined) updateData.name = name;
+    if (description !== undefined) updateData.description = description;
+    if (price !== undefined) updateData.price = Number(price);
+    if (bestseller !== undefined) updateData.bestseller = bestseller === 'true' || bestseller === true;
+
+    if (discountType !== undefined) {
+      updateData.discountType = ['percentage', 'fixed', 'none'].includes(discountType) ? discountType : 'none';
+    }
+    if (discountValue !== undefined) {
+      updateData.discountValue = Math.max(0, Number(discountValue) || 0);
+    }
+
+    if (category) {
+      const targetCatId = await findOrCreateCategory(category, subcategory);
+      if (targetCatId) {
+        updateData.categoryId = targetCatId;
+      }
+    }
+
+    // 1. Xử lý ảnh: existingImages (URL) và file ảnh upload mới
+    let existingImages = [];
+    if (req.body.existingImages !== undefined) {
+      try {
+        existingImages = typeof req.body.existingImages === 'string'
+          ? JSON.parse(req.body.existingImages)
+          : req.body.existingImages;
+      } catch {
+        existingImages = [];
+      }
+    }
+
+    const image1 = req.files?.image1 && req.files.image1[0];
+    const image2 = req.files?.image2 && req.files.image2[0];
+    const image3 = req.files?.image3 && req.files.image3[0];
+    const image4 = req.files?.image4 && req.files.image4[0];
+    const newFiles = [image1, image2, image3, image4].filter((item) => item !== undefined);
+
+    let newImagesUrl = [];
+    if (newFiles.length > 0) {
+      newImagesUrl = await Promise.all(
+        newFiles.map(async (item) => {
+          let result = await cloudinary.uploader.upload(item.path, { resource_type: 'image' });
+          return result.secure_url;
+        })
+      );
+    }
+
+    const finalImages = [...(Array.isArray(existingImages) ? existingImages : []), ...newImagesUrl].filter(Boolean);
+
+    if (req.body.existingImages !== undefined || newFiles.length > 0) {
+      if (finalImages.length === 0) {
+        return res.json({ success: false, message: 'Sản phẩm phải có ít nhất 1 ảnh' });
+      }
+
+      await productImageModel.deleteMany({ productId: id });
+      for (let i = 0; i < finalImages.length; i++) {
+        await productImageModel.create({
+          productId: id,
+          url: finalImages[i],
+          isThumbnail: i === 0,
+          sortOrder: i,
+        });
+      }
+    }
+
+    // 2. Xử lý kích cỡ / biến thể
+    if (req.body.sizes !== undefined) {
+      let parsedSizes = [];
+      try {
+        parsedSizes = typeof req.body.sizes === 'string' ? JSON.parse(req.body.sizes) : req.body.sizes;
+      } catch {
+        parsedSizes = ['S', 'M', 'L'];
+      }
+
+      if (Array.isArray(parsedSizes) && parsedSizes.length > 0) {
+        const existingVariants = await productVariantModel.find({ productId: id }).lean();
+        const existingSizes = new Set(existingVariants.map((v) => v.size));
+
+        await productVariantModel.deleteMany({ productId: id, size: { $nin: parsedSizes } });
+
+        for (const size of parsedSizes) {
+          if (!existingSizes.has(size)) {
+            await productVariantModel.create({
+              productId: id,
+              size,
+              color: 'Mặc định',
+              material: 'Lụa/Gấm',
+              stockQuantity: 100,
+            });
+          }
+        }
+      }
+    }
 
     const updated = await productModel.findByIdAndUpdate(
       id,
-      {
-        name,
-        description,
-        price: Number(price),
-        discountType: validDiscountType,
-        discountValue: validDiscountValue,
-        bestseller: bestseller === 'true' || bestseller === true,
-      },
+      updateData,
       { new: true }
     );
 

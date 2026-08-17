@@ -60,7 +60,7 @@ const AO_DAI_CATEGORIES = [
   'Áo dài đính kết',
 ];
 
-const AO_DAI_SUBCATEGORIES = ['Nữ', 'Cưới', 'Dự tiệc', 'Công sở', 'Học sinh'];
+const AO_DAI_SUBCATEGORIES = ['Dự tiệc', 'Cưới & Hỏi', 'Công sở', 'Cách tân', 'Học sinh', 'Nữ'];
 const SIZES = ['S', 'M', 'L', 'XL'];
 const COLORS = ['Đỏ', 'Trắng', 'Xanh', 'Vàng', 'Hồng'];
 
@@ -108,6 +108,7 @@ async function main() {
     // 1. CATEGORIES
     console.log('🌱 Creating Categories...');
     const createdCategoryDocs = [];
+    const createdSubCategoryDocs = [];
     for (const catName of AO_DAI_CATEGORIES) {
       const parentCat = await categoryModel.create({
         name: catName,
@@ -122,7 +123,7 @@ async function main() {
           slug: slugify(`${catName}-${subName}`),
           parentId: parentCat._id,
         });
-        createdCategoryDocs.push(subCat);
+        createdSubCategoryDocs.push({ subCat, parentCat });
       }
     }
 
@@ -178,15 +179,15 @@ async function main() {
     const createdVariants = [];
 
     for (let i = 0; i < 20; i++) {
-      const category = pick(createdCategoryDocs);
+      const { subCat, parentCat } = pick(createdSubCategoryDocs);
       const discountType = pick(['none', 'percentage', 'fixed']);
       let discountValue = 0;
       if (discountType === 'percentage') discountValue = pick([10, 15, 20, 25]);
       if (discountType === 'fixed') discountValue = pick([50000, 100000, 150000]);
 
       const product = await productModel.create({
-        categoryId: category._id,
-        name: `Áo dài ${category.name} Mẫu ${i + 1}`,
+        categoryId: subCat._id,
+        name: `Áo dài ${parentCat.name} - ${subCat.name} Mẫu ${i + 1}`,
         description: `Sản phẩm áo dài cao cấp tôn dáng, chất liệu lụa gấm tự nhiên.`,
         price: randInt(400_000, 1_800_000),
         discountType,

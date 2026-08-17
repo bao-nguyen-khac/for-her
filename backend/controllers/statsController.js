@@ -2,7 +2,11 @@ import orderModel from '../models/orderModel.js';
 import orderItemModel from '../models/orderItemModel.js';
 import productModel from '../models/productModel.js';
 import productImageModel from '../models/productImageModel.js';
+import productVariantModel from '../models/productVariantModel.js';
 import userModel from '../models/userModel.js';
+import addressModel from '../models/addressModel.js';
+
+const DEFAULT_PLACEHOLDER_IMG = 'https://forhershop.vn/wp-content/uploads/2026/03/AD05244-QUA40XMI-2-1365x2048.webp';
 
 // Get dashboard statistics with dynamic range filtering
 const getDashboardStats = async (req, res) => {
@@ -57,14 +61,21 @@ const getDashboardStats = async (req, res) => {
     for (const item of orderItems) {
       if (item.variantId && item.variantId.productId) {
         const pId = item.variantId.productId.toString();
+        const prod = await productModel.findById(pId).lean();
+        // Skip orphaned order items where product was deleted
+        if (!prod) continue;
+
         if (!productSales[pId]) {
-          const prod = await productModel.findById(pId).lean();
-          const imgDoc = await productImageModel.findOne({ productId: pId, isThumbnail: true }).lean();
+          const imgDoc = await productImageModel
+            .findOne({ productId: pId })
+            .sort({ isThumbnail: -1, sortOrder: 1 })
+            .lean();
+
           productSales[pId] = {
-            name: prod ? prod.name : 'Sản phẩm',
+            name: prod.name,
             quantity: 0,
             revenue: 0,
-            image: imgDoc ? imgDoc.url : '',
+            image: imgDoc?.url || DEFAULT_PLACEHOLDER_IMG,
           };
         }
         productSales[pId].quantity += Number(item.quantity) || 1;
@@ -72,9 +83,33 @@ const getDashboardStats = async (req, res) => {
       }
     }
 
-    const topProducts = Object.values(productSales)
+    let topProducts = Object.values(productSales)
       .sort((a, b) => b.quantity - a.quantity)
       .slice(0, 5);
+
+    // If fewer than 5 sold products, supplement with existing bestseller/popular products
+    if (topProducts.length < 5) {
+      const existingProductIds = Object.keys(productSales);
+      const fallbackProducts = await productModel
+        .find({ _id: { $nin: existingProductIds } })
+        .sort({ bestseller: -1, createdAt: -1 })
+        .limit(5 - topProducts.length)
+        .lean();
+
+      for (const prod of fallbackProducts) {
+        const imgDoc = await productImageModel
+          .findOne({ productId: prod._id })
+          .sort({ isThumbnail: -1, sortOrder: 1 })
+          .lean();
+
+        topProducts.push({
+          name: prod.name,
+          quantity: 0,
+          revenue: 0,
+          image: imgDoc?.url || DEFAULT_PLACEHOLDER_IMG,
+        });
+      }
+    }
 
     // Chart Data
     let chartLabels = [];
@@ -157,11 +192,40 @@ const getDashboardStats = async (req, res) => {
       chartData = months.map((m) => revenueByMonth[m]);
     }
 
-    const recentOrders = await orderModel
+    // Populate recent orders with address info
+    const rawRecentOrders = await orderModel
       .find(query)
       .sort({ date: -1 })
       .limit(5)
       .lean();
+
+    const recentOrders = await Promise.all(
+      rawRecentOrders.map(async (o) => {
+        let address = {
+          firstName: 'Khách',
+          lastName: 'Hàng',
+          receiverName: 'Khách hàng',
+          phone: '',
+          street: '',
+        };
+        if (o.addressId) {
+          const addr = await addressModel.findById(o.addressId).lean();
+          if (addr) {
+            address = {
+              firstName: addr.receiverName ? addr.receiverName.split(' ')[0] : 'Khách',
+              lastName: addr.receiverName ? addr.receiverName.split(' ').slice(1).join(' ') : 'Hàng',
+              receiverName: addr.receiverName,
+              phone: addr.phone || '',
+              street: addr.addressLine || '',
+            };
+          }
+        }
+        return {
+          ...o,
+          address,
+        };
+      })
+    );
 
     res.json({
       success: true,

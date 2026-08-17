@@ -205,8 +205,12 @@ const Home = ({ token }) => {
                   <div className="font-bold text-sm text-gray-400 w-4">{index + 1}</div>
                   <img
                     className="w-12 h-12 rounded-lg object-cover bg-gray-100 border border-gray-100 shrink-0"
-                    src={p.image || "placeholder.png"}
+                    src={p.image || "https://forhershop.vn/wp-content/uploads/2026/03/AD05244-QUA40XMI-2-1365x2048.webp"}
                     alt={p.name}
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = "https://forhershop.vn/wp-content/uploads/2026/03/AD05244-QUA40XMI-2-1365x2048.webp";
+                    }}
                   />
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-semibold text-gray-800 truncate">{p.name}</p>
@@ -246,7 +250,7 @@ const Home = ({ token }) => {
                   {recentOrders.map((order) => (
                     <tr key={order._id} className="hover:bg-gray-50/50 transition-colors">
                       <td className="py-3.5 font-medium text-gray-800">
-                        {order.address?.firstName} {order.address?.lastName}
+                        {order.address?.receiverName || [order.address?.firstName, order.address?.lastName].filter(Boolean).join(' ') || 'Khách hàng'}
                       </td>
                       <td className="py-3.5 text-gray-500">
                         {new Date(order.date).toLocaleDateString("vi-VN")}

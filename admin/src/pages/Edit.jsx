@@ -4,7 +4,7 @@ import { assets } from '../assets/assets'
 import axios from 'axios'
 import { backendUrl, formatPrice } from '../App'
 import { toast } from 'react-toastify'
-import { CATEGORIES, getCategoryLabel } from '../constants/categories'
+import { CATEGORIES, SUBCATEGORIES, getCategoryLabel, normalizeCategorySlug } from '../constants/categories'
 
 const Edit = ({ token }) => {
   const { id } = useParams()
@@ -25,16 +25,22 @@ const Edit = ({ token }) => {
   const [discountType, setDiscountType] = useState('none')
   const [discountValue, setDiscountValue] = useState('')
   const [category, setCategory] = useState(CATEGORIES[0]?.slug || 'ao-dai-truyen-thong')
-  const [subCategory, setSubCategory] = useState('')
+  const [subCategory, setSubCategory] = useState(SUBCATEGORIES[0] || 'Dự tiệc')
   const [subCategoryOptions, setSubCategoryOptions] = useState([])
   const [bestseller, setBestseller] = useState(false)
   const [sizes, setSizes] = useState([])
 
   const categoryOptions = useMemo(() => {
-    const has = CATEGORIES.some((c) => c.slug === category)
+    const slug = normalizeCategorySlug(category)
+    const has = CATEGORIES.some((c) => c.slug === slug || c.slug === category)
     if (has || !category) return CATEGORIES
     return [{ slug: category, label: getCategoryLabel(category) }, ...CATEGORIES]
   }, [category])
+
+  const subCategoryList = useMemo(() => {
+    const dynamic = (subCategoryOptions || []).filter((v) => v && v !== 'Mặc định')
+    return Array.from(new Set([...SUBCATEGORIES, ...dynamic]))
+  }, [subCategoryOptions])
 
   const filePreviews = useMemo(() => {
     const files = [image1, image2, image3, image4].filter(Boolean)
@@ -61,8 +67,8 @@ const Edit = ({ token }) => {
       setPrice(String(p?.price ?? ''))
       setDiscountType(p?.discountType || 'none')
       setDiscountValue(p?.discountValue !== undefined && p?.discountValue !== null ? String(p.discountValue) : '')
-      setCategory(p?.category || (CATEGORIES[0]?.slug || 'ao-dai-truyen-thong'))
-      setSubCategory(p?.subcategory || '')
+      setCategory(normalizeCategorySlug(p?.category) || CATEGORIES[0]?.slug || 'ao-dai-truyen-thong')
+      setSubCategory(p?.subcategory && p?.subcategory !== 'Mặc định' ? p.subcategory : (SUBCATEGORIES[0] || 'Dự tiệc'))
       setBestseller(Boolean(p?.bestseller))
       setSizes(Array.isArray(p?.sizes) ? p.sizes : [])
       setImageUrls(Array.isArray(p?.image) ? p.image : [])
@@ -121,8 +127,14 @@ const Edit = ({ token }) => {
   const onsubmitHandler = async (e) => {
     e.preventDefault()
     try {
+      let finalImageUrls = [...imageUrls]
+      const pendingUrl = imageUrlInput.trim()
+      if (pendingUrl && /^https?:\/\//i.test(pendingUrl) && !finalImageUrls.includes(pendingUrl)) {
+        finalImageUrls.push(pendingUrl)
+      }
+
       const selectedFiles = [image1, image2, image3, image4].filter(Boolean)
-      if (imageUrls.length === 0 && selectedFiles.length === 0) {
+      if (finalImageUrls.length === 0 && selectedFiles.length === 0) {
         toast.error('Vui lòng thêm ít nhất 1 ảnh')
         return
       }
@@ -138,7 +150,7 @@ const Edit = ({ token }) => {
       formData.append('subcategory', subCategory)
       formData.append('bestseller', bestseller)
       formData.append('sizes', JSON.stringify(sizes))
-      formData.append('existingImages', JSON.stringify(imageUrls))
+      formData.append('existingImages', JSON.stringify(finalImageUrls))
 
       image1 && formData.append('image1', image1)
       image2 && formData.append('image2', image2)
@@ -146,6 +158,7 @@ const Edit = ({ token }) => {
       image4 && formData.append('image4', image4)
 
       const response = await axios.put(backendUrl + '/api/product/update', formData, { headers: { token } })
+
       if (response.data.success) {
         toast.success('Đã cập nhật sản phẩm')
         navigate('/list')
@@ -154,24 +167,33 @@ const Edit = ({ token }) => {
       }
     } catch (error) {
       console.log(error)
-      toast.error('Không thể cập nhật sản phẩm')
+      toast.error(error.message)
     }
   }
 
   if (loading) {
-    return <p>Đang tải...</p>
+    return <div className='py-8 text-gray-500'>Đang tải thông tin sản phẩm...</div>
   }
 
   return (
     <form onSubmit={onsubmitHandler} className='flex flex-col w-full items-start gap-3'>
-      <p className='text-lg font-medium'>Chỉnh sửa sản phẩm</p>
+      <div>
+        <p className='mb-2'>Ảnh hiện tại (URL)</p>
+        <div className='flex gap-2 max-w-[500px] mb-3'>
+          <input
+            value={imageUrlInput}
+            onChange={(e) => setImageUrlInput(e.target.value)}
+            className='w-full px-3 py-2'
+            type='text'
+            placeholder='https://...'
+          />
+          <button type='button' onClick={addImageUrl} className='px-4 py-2 bg-black text-white'>
+            Thêm
+          </button>
+        </div>
 
-      <div className='w-full'>
-        <p className='mb-2'>Ảnh hiện tại</p>
-        {imageUrls.length === 0 ? (
-          <p className='text-sm text-gray-500'>Chưa có ảnh</p>
-        ) : (
-          <div className='flex flex-wrap gap-2'>
+        {imageUrls.length > 0 ? (
+          <div className='flex flex-wrap gap-2 mb-3'>
             {imageUrls.map((url) => (
               <div key={url} className='relative'>
                 <img className='w-20 h-20 object-cover border rounded' src={url} alt='' />
@@ -186,28 +208,11 @@ const Edit = ({ token }) => {
               </div>
             ))}
           </div>
-        )}
-      </div>
+        ) : null}
 
-      <div className='w-full'>
-        <p className='mb-2'>Thêm ảnh bằng URL</p>
-        <div className='flex gap-2 max-w-[500px]'>
-          <input
-            value={imageUrlInput}
-            onChange={(e) => setImageUrlInput(e.target.value)}
-            className='w-full px-3 py-2'
-            type='text'
-            placeholder='https://...'
-          />
-          <button type='button' onClick={addImageUrl} className='px-4 py-2 bg-black text-white'>
-            Thêm
-          </button>
-        </div>
-      </div>
+        <p className='mb-2'>Thêm / thay đổi ảnh bằng file tải lên</p>
 
-      <div>
-        <p className='mb-2'>Tải ảnh lên (tối đa 4 ảnh)</p>
-        <div className='flex gap-2 flex-wrap'>
+        <div className='flex gap-2'>
           <div className='relative'>
             <label htmlFor='image1'>
               <img className='w-20' src={!image1 ? assets.upload_area : URL.createObjectURL(image1)} alt='' />
@@ -280,17 +285,9 @@ const Edit = ({ token }) => {
         <div>
           <p className='mb-2'>Loại</p>
           <select value={subCategory} onChange={(e) => setSubCategory(e.target.value)} className='w-full px-3 py-2'>
-            {subCategoryOptions.length > 0 ? (
-              subCategoryOptions.map((v) => (
-                <option key={v} value={v}>{v}</option>
-              ))
-            ) : (
-              <>
-                <option value='Topwear'>Topwear</option>
-                <option value='Bottomwear'>Bottomwear</option>
-                <option value='Winterwear'>Winterwear</option>
-              </>
-            )}
+            {subCategoryList.map((v) => (
+              <option key={v} value={v}>{v}</option>
+            ))}
           </select>
         </div>
 
@@ -367,4 +364,3 @@ const Edit = ({ token }) => {
 }
 
 export default Edit
-

@@ -7,6 +7,15 @@ export const CATEGORIES = [
   { slug: 'ao-dai-dinh-ket', label: 'Áo dài đính kết' },
 ];
 
+export const SUBCATEGORIES = [
+  'Dự tiệc',
+  'Cưới & Hỏi',
+  'Công sở',
+  'Cách tân',
+  'Học sinh',
+  'Nữ',
+];
+
 const CATEGORY_LABEL_BY_SLUG = CATEGORIES.reduce((acc, c) => {
   acc[c.slug] = c.label;
   return acc;
@@ -21,6 +30,8 @@ const LEGACY_CATEGORY_TO_SLUG = {
 export function normalizeCategorySlug(categoryValue) {
   if (!categoryValue) return '';
   if (CATEGORY_LABEL_BY_SLUG[categoryValue]) return categoryValue;
+  const foundByLabel = CATEGORIES.find(c => c.label.toLowerCase() === categoryValue.toLowerCase());
+  if (foundByLabel) return foundByLabel.slug;
   return LEGACY_CATEGORY_TO_SLUG[categoryValue] || categoryValue;
 }
 
@@ -28,4 +39,3 @@ export function getCategoryLabel(categoryValue) {
   const slug = normalizeCategorySlug(categoryValue);
   return CATEGORY_LABEL_BY_SLUG[slug] || categoryValue || '';
 }
-

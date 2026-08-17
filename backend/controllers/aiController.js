@@ -13,7 +13,7 @@ export const chatWithAI = async (req, res) => {
 
     const apiKey = process.env.AI_API_KEY || process.env.OPENROUTER_API_KEY;
     const baseUrl = process.env.AI_BASE_URL || 'https://openrouter.ai/api/v1';
-    const modelName = process.env.AI_MODEL_NAME || 'google/gemma-3-12b-it';
+    const modelName = process.env.AI_MODEL_NAME || 'google/gemini-3.1-flash-lite';
 
     if (!apiKey) {
       return res.json({
