@@ -8,7 +8,7 @@ import { CATEGORIES, SUBCATEGORIES, getCategoryLabel, normalizeCategorySlug } fr
 import axios from 'axios';
 
 const Collection = () => {
-  const { products, search, backendUrl } = useContext(ShopContext);
+  const { products, search, backendUrl, getFinalPrice } = useContext(ShopContext);
   const [searchParams] = useSearchParams();
   const initialCategoryParam = searchParams.get('category');
   const [showFilter, setShowFilter] = useState(false);
@@ -109,6 +109,15 @@ const Collection = () => {
       if (SubCategory.length) {
         productsCopy = productsCopy.filter((item) => SubCategory.includes(item.subcategory));
       }
+
+      if (sortType === 'low-high') {
+        productsCopy.sort((a, b) => (getFinalPrice ? getFinalPrice(a) - getFinalPrice(b) : (a.price || 0) - (b.price || 0)));
+      } else if (sortType === 'high-low') {
+        productsCopy.sort((a, b) => (getFinalPrice ? getFinalPrice(b) - getFinalPrice(a) : (b.price || 0) - (a.price || 0)));
+      } else {
+        productsCopy.sort((a, b) => (b.date || 0) - (a.date || 0));
+      }
+
       setFilterProducts(productsCopy.slice(0, 48));
       setPagination({ page: 1, limit: 48, total: productsCopy.length, totalPages: 1 });
     } finally {

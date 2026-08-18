@@ -67,6 +67,23 @@ async function findOrCreateCategory(categoryInput, subcategoryInput) {
   return parentCat._id;
 }
 
+// Helper to calculate discounted final price
+function calcFinalPrice(pDoc) {
+  const base = Number(pDoc?.price ?? 0);
+  const type = pDoc?.discountType || 'none';
+  const value = Number(pDoc?.discountValue ?? 0);
+
+  if (!value || type === 'none') return Math.max(0, base);
+
+  if (type === 'percentage') {
+    return Math.max(0, Math.round(base * (1 - value / 100)));
+  }
+  if (type === 'fixed') {
+    return Math.max(0, base - value);
+  }
+  return Math.max(0, base);
+}
+
 // Helper to format product with images, variants, and category names for frontend/admin backward compatibility
 async function formatProduct(productDoc) {
   if (!productDoc) return null;
@@ -106,6 +123,7 @@ async function formatProduct(productDoc) {
     ...pDoc,
     discountType: pDoc.discountType || 'none',
     discountValue: pDoc.discountValue || 0,
+    finalPrice: calcFinalPrice(pDoc),
     image: imageArray.length > 0 ? imageArray : ['https://forhershop.vn/wp-content/uploads/2026/03/AD05244-QUA40XMI-2-1365x2048.webp'],
     sizes: sizes.length > 0 ? sizes : ['S', 'M', 'L'],
     category: categoryName,
@@ -261,15 +279,82 @@ const listProducts = async (req, res) => {
     const limitNum = Math.min(Math.max(1, Number(limit) || 60), 100);
     const skipNum = (pageNum - 1) * limitNum;
 
-    let q = productModel.find(query);
+    const finalPriceExpr = {
+      $switch: {
+        branches: [
+          {
+            case: {
+              $and: [
+                { $eq: ['$discountType', 'percentage'] },
+                { $gt: [{ $ifNull: ['$discountValue', 0] }, 0] },
+              ],
+            },
+            then: {
+              $max: [
+                0,
+                {
+                  $round: [
+                    {
+                      $multiply: [
+                        '$price',
+                        {
+                          $subtract: [
+                            1,
+                            { $divide: [{ $ifNull: ['$discountValue', 0] }, 100] },
+                          ],
+                        },
+                      ],
+                    },
+                    0,
+                  ],
+                },
+              ],
+            },
+          },
+          {
+            case: {
+              $and: [
+                { $eq: ['$discountType', 'fixed'] },
+                { $gt: [{ $ifNull: ['$discountValue', 0] }, 0] },
+              ],
+            },
+            then: {
+              $max: [
+                0,
+                { $subtract: ['$price', { $ifNull: ['$discountValue', 0] }] },
+              ],
+            },
+          },
+        ],
+        default: '$price',
+      },
+    };
 
-    if (sort === 'price_asc') q = q.sort({ price: 1 });
-    else if (sort === 'price_desc') q = q.sort({ price: -1 });
-    else q = q.sort({ createdAt: -1 });
+    let sortStage = { createdAt: -1, _id: 1 };
+    if (sort === 'price_asc') {
+      sortStage = { finalPrice: 1, price: 1, _id: 1 };
+    } else if (sort === 'price_desc') {
+      sortStage = { finalPrice: -1, price: -1, _id: 1 };
+    } else if (sort === 'newest') {
+      sortStage = { createdAt: -1, _id: 1 };
+    }
 
-    q = q.skip(skipNum).limit(limitNum);
+    const aggregatePipeline = [
+      { $match: query },
+      {
+        $addFields: {
+          finalPrice: finalPriceExpr,
+        },
+      },
+      { $sort: sortStage },
+      { $skip: skipNum },
+      { $limit: limitNum },
+    ];
 
-    const [rawProducts, total] = await Promise.all([q.lean(), productModel.countDocuments(query)]);
+    const [rawProducts, total] = await Promise.all([
+      productModel.aggregate(aggregatePipeline),
+      productModel.countDocuments(query),
+    ]);
 
     const products = await Promise.all(rawProducts.map(formatProduct));
 
