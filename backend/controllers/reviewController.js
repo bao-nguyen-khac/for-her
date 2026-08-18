@@ -2,7 +2,10 @@ import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
 import reviewModel from '../models/reviewModel.js';
 import productModel from '../models/productModel.js';
+import productImageModel from '../models/productImageModel.js';
 import userModel from '../models/userModel.js';
+
+const DEFAULT_IMG = 'https://forhershop.vn/wp-content/uploads/2026/03/AD05244-QUA40XMI-2-1365x2048.webp';
 
 function parseUserFromTokenHeader(req) {
   const { token } = req.headers || {};
@@ -19,15 +22,49 @@ function parseUserFromTokenHeader(req) {
 async function formatReview(rDoc) {
   if (!rDoc) return null;
   const review = rDoc.toObject ? rDoc.toObject() : rDoc;
-  let reviewerName = 'Người dùng';
+  let reviewerName = review.userName || '';
 
-  if (review.userId) {
-    const u = await userModel.findById(review.userId).lean();
-    if (u) reviewerName = u.name;
+  if (!reviewerName) {
+    if (review.userId) {
+      if (typeof review.userId === 'object' && review.userId?.name) {
+        reviewerName = review.userId.name;
+      } else {
+        const u = await userModel.findById(review.userId).lean();
+        if (u && u.name) reviewerName = u.name;
+      }
+    }
+  }
+
+  if (!reviewerName) reviewerName = 'Khách hàng';
+
+  const pId = review.productId?._id || review.productId;
+  let productInfo = review.productId;
+  if (pId) {
+    let pName = 'Sản phẩm';
+    if (typeof productInfo === 'object' && productInfo?.name) {
+      pName = productInfo.name;
+    } else {
+      const prod = await productModel.findById(pId).lean();
+      if (prod) pName = prod.name;
+    }
+
+    const imgs = await productImageModel
+      .find({ productId: pId })
+      .sort({ isThumbnail: -1, sortOrder: 1 })
+      .lean();
+
+    const imageArray = imgs.length > 0 ? imgs.map((i) => i.url) : [DEFAULT_IMG];
+
+    productInfo = {
+      _id: pId,
+      name: pName,
+      image: imageArray,
+    };
   }
 
   return {
     ...review,
+    productId: productInfo,
     name: reviewerName,
   };
 }
@@ -43,6 +80,7 @@ const getProductReviews = async (req, res) => {
     const rawReviews = await reviewModel
       .find({ productId: id })
       .sort({ createdAt: -1 })
+      .populate('userId', 'name email')
       .lean();
 
     const reviews = await Promise.all(rawReviews.map(formatReview));
@@ -94,7 +132,12 @@ const addProductReview = async (req, res) => {
     const userId = parseUserFromTokenHeader(req);
 
     let finalUserId = userId;
-    if (!finalUserId) {
+    let finalUserName = name || 'Khách hàng';
+
+    if (userId) {
+      const u = await userModel.findById(userId).lean();
+      if (u && u.name) finalUserName = u.name;
+    } else {
       // Find or create guest user if non-authenticated
       let guestUser = await userModel.findOne({ email: 'guest@example.com' });
       if (!guestUser) {
@@ -110,6 +153,7 @@ const addProductReview = async (req, res) => {
     const review = await reviewModel.create({
       productId: id,
       userId: finalUserId,
+      userName: finalUserName,
       rating: ratingNum,
       comment: commentText,
     });
@@ -129,6 +173,7 @@ const listReviews = async (req, res) => {
       .find({})
       .sort({ createdAt: -1 })
       .populate('productId', 'name price')
+      .populate('userId', 'name email')
       .lean();
 
     const reviews = await Promise.all(rawReviews.map(formatReview));

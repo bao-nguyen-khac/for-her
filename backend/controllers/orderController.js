@@ -13,16 +13,24 @@ async function formatOrder(orderDoc) {
   const oDoc = orderDoc.toObject ? orderDoc.toObject() : orderDoc;
 
   // Address
-  let address = {};
+  let address = {
+    firstName: 'Khách',
+    lastName: 'Hàng',
+    receiverName: 'Khách hàng',
+    phone: '',
+    street: '',
+    addressLine: '',
+  };
   if (oDoc.addressId) {
     const addr = await addressModel.findById(oDoc.addressId).lean();
     if (addr) {
       address = {
         firstName: addr.receiverName ? addr.receiverName.split(' ')[0] : 'Khách',
         lastName: addr.receiverName ? addr.receiverName.split(' ').slice(1).join(' ') : 'Hàng',
-        receiverName: addr.receiverName,
-        phone: addr.phone,
-        street: addr.addressLine,
+        receiverName: addr.receiverName || 'Khách hàng',
+        phone: addr.phone || '',
+        street: addr.addressLine || '',
+        addressLine: addr.addressLine || '',
       };
     }
   }

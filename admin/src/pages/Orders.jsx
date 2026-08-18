@@ -109,22 +109,18 @@ const Orders = ({ token }) => {
                   }
                 })}
               </div>
-              <p className="mt-3 mb-2 font-medium">
-                {order.address.firstName + " " + order.address.lastName}
+              <p className="mt-3 mb-1 font-medium text-gray-900">
+                {order.address?.receiverName || `${order.address?.firstName || ''} ${order.address?.lastName || ''}`.trim() || 'Khách hàng'}
               </p>
               <div>
-                <p>{order.address.street + ","}</p>
-                <p>
-                  {order.address.city +
-                    ", " +
-                    order.address.state +
-                    ", " +
-                    order.address.country +
-                    ", " +
-                    order.address.zipcode}
-                </p>
+                <p className="text-gray-600">{order.address?.street || order.address?.addressLine || 'Chưa có địa chỉ'}</p>
+                {[order.address?.city, order.address?.state, order.address?.country, order.address?.zipcode].filter(Boolean).length > 0 && (
+                  <p className="text-gray-500">
+                    {[order.address?.city, order.address?.state, order.address?.country, order.address?.zipcode].filter(Boolean).join(', ')}
+                  </p>
+                )}
               </div>
-              <p>{order.address.phone}</p>
+              <p className="text-gray-500 mt-1">{order.address?.phone || ''}</p>
             </div>
             <div>
               <p className="text-sm sm:text-[15px]">

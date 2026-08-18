@@ -14,7 +14,7 @@ export const RevenueLineChart = ({ labels = [], data = [] }) => {
 
   // Find max value for scaling
   const maxVal = Math.max(...data, 1000);
-  
+
   // Calculate points
   const points = data.map((val, idx) => {
     const x = padding.left + (idx / (data.length - 1 || 1)) * chartWidth;
@@ -27,13 +27,13 @@ export const RevenueLineChart = ({ labels = [], data = [] }) => {
   let areaPath = "";
 
   if (points.length > 0) {
-    linePath = `M ${points[0].x} ${points[0].y} ` + 
-      points.slice(1).map(p => `L ${p.x} ${p.y}`).join(" ");
+    linePath = `M ${points[0].x} ${points[0].y} ` +
+      points.slice(1).map((p) => `L ${p.x} ${p.y}`).join(" ");
 
     areaPath = `${linePath} L ${points[points.length - 1].x} ${padding.top + chartHeight} L ${points[0].x} ${padding.top + chartHeight} Z`;
   }
 
-  // Y-axis gridlines (5 lines)
+  // Y-axis gridlines (4 lines)
   const gridCount = 4;
   const gridLines = Array.from({ length: gridCount + 1 }, (_, i) => {
     const val = (maxVal * (gridCount - i)) / gridCount;
@@ -45,17 +45,17 @@ export const RevenueLineChart = ({ labels = [], data = [] }) => {
   const labelSkip = Math.max(1, Math.ceil(labels.length / 8));
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-xs relative w-full">
+    <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-xs relative w-full h-full flex flex-col justify-between">
       <div className="mb-4">
         <h2 className="text-base font-semibold text-gray-800">Biểu đồ doanh thu</h2>
         <p className="text-xs text-gray-500">Doanh số bán hàng trong khoảng thời gian đã chọn</p>
       </div>
 
-      <div className="relative w-full overflow-x-auto">
+      <div className="relative w-full overflow-x-auto my-auto">
         <svg viewBox={`0 0 ${width} ${height}`} className="w-full min-w-[500px] h-auto overflow-visible">
           <defs>
             <linearGradient id="chart-gradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#C586A5" stopOpacity="0.4" />
+              <stop offset="0%" stopColor="#C586A5" stopOpacity="0.45" />
               <stop offset="100%" stopColor="#C586A5" stopOpacity="0.01" />
             </linearGradient>
           </defs>
@@ -129,7 +129,6 @@ export const RevenueLineChart = ({ labels = [], data = [] }) => {
                 onMouseEnter={() => setHoveredPoint(p)}
                 onMouseLeave={() => setHoveredPoint(null)}
               />
-              {/* Invisible larger capture target for easier hovering */}
               <circle
                 cx={p.x}
                 cy={p.y}
@@ -182,22 +181,23 @@ export const OrderStatusDoughnutChart = ({ distribution = {} }) => {
   const total = dataList.reduce((sum, item) => sum + item.count, 0);
 
   // SVG parameters
-  const size = 180;
-  const r = 60;
-  const strokeWidth = 16;
+  const size = 160;
+  const r = 54;
+  const strokeWidth = 14;
   const center = size / 2;
   const circ = 2 * Math.PI * r;
 
   let accumulatedPercent = 0;
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-xs w-full flex flex-col">
-      <div className="mb-4">
+    <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-xs w-full h-full flex flex-col justify-between">
+      <div className="mb-3">
         <h2 className="text-base font-semibold text-gray-800">Trạng thái đơn hàng</h2>
         <p className="text-xs text-gray-500">Cơ cấu trạng thái xử lý đơn hàng</p>
       </div>
 
-      <div className="flex flex-col sm:flex-row items-center justify-around gap-6 my-auto">
+      {/* Doughnut Chart centered */}
+      <div className="flex justify-center items-center my-2">
         <div className="relative" style={{ width: size, height: size }}>
           <svg width={size} height={size} className="transform -rotate-90">
             {/* Background circle */}
@@ -215,9 +215,8 @@ export const OrderStatusDoughnutChart = ({ distribution = {} }) => {
                 if (item.count === 0) return null;
                 const percent = item.count / total;
                 const strokeLength = percent * circ;
-                const strokeOffset = circ - strokeLength;
-                const dashOffset = circ - (accumulatedPercent / 100) * circ;
-                accumulatedPercent += percent * 100;
+                const dashOffset = -(accumulatedPercent * circ);
+                accumulatedPercent += percent;
 
                 return (
                   <circle
@@ -228,10 +227,9 @@ export const OrderStatusDoughnutChart = ({ distribution = {} }) => {
                     fill="transparent"
                     stroke={item.color}
                     strokeWidth={strokeWidth}
-                    strokeDasharray={circ}
+                    strokeDasharray={`${strokeLength} ${circ - strokeLength}`}
                     strokeDashoffset={dashOffset}
-                    strokeLinecap="round"
-                    className="transition-all duration-500 hover:stroke-[18px] cursor-pointer"
+                    className="transition-all duration-300 hover:opacity-85 cursor-pointer"
                   />
                 );
               })
@@ -247,30 +245,39 @@ export const OrderStatusDoughnutChart = ({ distribution = {} }) => {
             )}
           </svg>
 
-          {/* Center text labels */}
+          {/* Center text */}
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
             <span className="text-2xl font-bold text-gray-800">{total}</span>
             <span className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">Đơn hàng</span>
           </div>
         </div>
+      </div>
 
-        {/* Legend */}
-        <div className="flex flex-col gap-2.5 w-full sm:w-auto">
-          {dataList.map((item, idx) => {
-            const pct = total > 0 ? Math.round((item.count / total) * 100) : 0;
-            return (
-              <div key={idx} className="flex items-center justify-between gap-6 text-xs text-gray-600">
-                <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
-                  <span className="font-medium text-gray-700">{item.label}</span>
-                </div>
-                <div className="font-semibold text-gray-800">
-                  {item.count} <span className="text-[10px] text-gray-400 font-normal">({pct}%)</span>
-                </div>
+      {/* Clean Full-width Legend */}
+      <div className="flex flex-col gap-2 mt-2 w-full">
+        {dataList.map((item, idx) => {
+          const pct = total > 0 ? Math.round((item.count / total) * 100) : 0;
+          return (
+            <div
+              key={idx}
+              className="flex items-center justify-between py-1 px-2 rounded-lg hover:bg-gray-50/80 transition-colors text-xs"
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <span
+                  className="w-2.5 h-2.5 rounded-full shrink-0"
+                  style={{ backgroundColor: item.color }}
+                />
+                <span className="font-medium text-gray-700 whitespace-nowrap truncate">
+                  {item.label}
+                </span>
               </div>
-            );
-          })}
-        </div>
+              <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                <span className="font-bold text-gray-800">{item.count}</span>
+                <span className="text-[11px] text-gray-400 font-normal">({pct}%)</span>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
